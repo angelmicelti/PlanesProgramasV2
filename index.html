@@ -82,9 +82,6 @@
         .coordinator-btn.reassign { background: #1f8f52; }
         .coordinator-btn:hover { opacity: 0.95; transform: translateY(-1px); }
 
-        .project-btn { background: var(--ayto-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: var(--transition); margin-top: 10px; }
-        .project-btn:hover { background: #7b1fa2; }
-
         .collapsible { margin: 30px 0; background: white; border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
         .collapsible-header { padding: 15px 20px; background: var(--config-bg); color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
         .collapsible-content { padding: 0 20px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
@@ -489,7 +486,7 @@
     <div id="interface-blocker" class="interface-blocker">
         <div class="spinner"></div>
         <div id="loading-message">Cargando datos desde Firebase...</div>
-        <div class="small text-muted mt-2">Por favor, espera</div>
+        <div style="font-size:0.85rem;color:#6c757d;margin-top:8px;">Por favor, espera</div>
     </div>
 
     <!-- INDICADOR DE ÚLTIMA ACTUALIZACIÓN -->
@@ -515,6 +512,7 @@
                         <div id="course-subtitle" class="course-subtitle">Curso 2025-2026</div>
                     </div>
                 </div>
+                <div id="auth-status"><i class="fas fa-fire"></i> Firebase</div>
                 <!-- BARRA DE USUARIO -->
                 <div id="user-bar" style="display: none;">
                     <i class="fas fa-user-circle" style="font-size: 1.2rem;"></i>
@@ -601,10 +599,10 @@
 
                     <div class="form-group danger-zone" style="padding: 15px; background-color: rgba(220, 53, 69, 0.05); border-radius: 5px;">
                         <label>Zona de Peligro:</label>
-                        <button id="clear-all-data" class="btn btn-danger">
+                        <button id="clear-all-data" class="btn danger-btn">
                             <i class="fas fa-trash-alt"></i> Limpiar Todos los Datos
                         </button>
-                        <small class="form-text text-muted" style="display: block; margin-top: 5px;">
+                        <small style="display: block; margin-top: 5px; color: var(--gray); font-size: 0.8rem;">
                             Esta operación eliminará todos los datos incluyendo la lista de profesorado. Esta acción no se puede deshacer.
                         </small>
                     </div>
@@ -749,8 +747,8 @@
                 <h3 class="modal-title"><span class="title-icon"><i class="fas fa-fire"></i></span> Copias de seguridad (Firebase)</h3>
                 <button class="close-btn" id="close-firebase-list-modal">Cerrar</button>
             </div>
-            <div class="modal-body p-0">
-                <div class="p-3 bg-light border-bottom small text-secondary">Selecciona la versión que deseas restaurar:</div>
+            <div class="modal-body" style="padding:0;">
+                <div style="padding:12px;background:#f8f9fa;border-bottom:1px solid #ddd;font-size:0.8rem;color:var(--gray);">Selecciona la versión que deseas restaurar:</div>
                 <ul id="firebase-backup-list" style="list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto;"></ul>
             </div>
             <div class="modal-actions">
@@ -800,10 +798,7 @@
                 <div class="ayto-form-group">
                     <label>Actividades</label>
                     <div class="activities-editor" id="ayto-activities-editor">
-                        <div class="activity-row">
-                            <input type="text" placeholder="Describe una actividad...">
-                            <button type="button" class="remove-activity" title="Eliminar"><i class="fas fa-times"></i></button>
-                        </div>
+                        <!-- Se genera dinámicamente -->
                     </div>
                     <button type="button" class="add-activity-btn" id="add-activity-btn" style="margin-top: 8px; width: 100%;">
                         <i class="fas fa-plus"></i> Añadir actividad
@@ -887,24 +882,6 @@
         </div>
     </div>
     
-    <div id="project-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <span class="title-icon"><i class="fas fa-clipboard-list"></i></span>
-                    Detalle del proyecto
-                </h3>
-                <button class="close-btn" id="close-project-modal">Cerrar</button>
-            </div>
-            <div class="modal-body">
-                <div class="project-details" id="project-details"></div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="close-project-btn">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
     <footer>
         <div class="container">
             <p> Ángel Millán León - 2025</p>
@@ -1073,13 +1050,6 @@
             if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
 
             return { ok: true, msg: 'Inicio de sesion correcto.', rol: userData.rol };
-        }
-
-        async function changePassword(username, newPassword) {
-            if (!newPassword || newPassword.length < 4) return { ok: false, msg: 'La nueva contrasena debe tener al menos 4 caracteres.' };
-            const hashedPw = await hashPassword(newPassword);
-            await db.ref(`usuarios/${username}/passwordHash`).set(hashedPw);
-            return { ok: true, msg: 'Contrasena actualizada.' };
         }
 
         async function deleteUserAccount(username) {
@@ -1278,6 +1248,15 @@
         // ================================================
         // FUNCIONES UTILITARIAS
         // ================================================
+
+        // Escapar HTML para prevenir inyección XSS
+        function escapeHtml(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
         function getCurrentCourse() {
             const today = new Date();
             const year = today.getFullYear();
@@ -1285,16 +1264,9 @@
             return month >= 9 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
         }
 
-        function getTimestamp() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}-${minutes}-${seconds}`;
-        }
+        // ================================================
+        // FUNCIONES UTILITARIAS (fin)
+        // ================================================
 
         function showNotification(msg, type = 'success') {
             if (isLoadingFromCloud && type !== 'error') return;
@@ -1399,7 +1371,7 @@
                 participation: appState.participation,
                 teachers: appState.teachers,
                 selectedCourse: appState.selectedCourse,
-                aytoProjects: appState.aytoProjects || [],
+                aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || []
             };
         }
@@ -1431,6 +1403,27 @@
             }
         }
 
+        // Función compartida para aplicar datos de Firebase al estado de la app
+        function applyFirebaseData(data) {
+            // IMPORTANTE: leer selectedCourse ANTES de normalizar
+            appState.selectedCourse = data.selectedCourse || getCurrentCourse();
+            appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
+            appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
+            ensureActiveCourseData();
+            appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
+            if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
+            localStorage.setItem('programsAppData', JSON.stringify(appState));
+            updateTeacherSelectors();
+            initPrograms();
+            renderAytoProjects();
+            renderCourses();
+            document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
+            const dossierCourseEl = document.getElementById('dossier-course');
+            if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+            syncAytoCourse();
+            saveLastUpdate('firebase');
+        }
+
         async function loadFromFirebase() {
             if (isLoadingFromCloud) { showNotification('Ya se está cargando...', 'info'); return; }
             blockInterface('Cargando datos desde Firebase...');
@@ -1444,22 +1437,7 @@
                 }
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
-                    appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
-                    appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
-                    appState.selectedCourse = data.selectedCourse || getCurrentCourse();
-                    ensureActiveCourseData();
-                    appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
-                    if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
-                    localStorage.setItem('programsAppData', JSON.stringify(appState));
-                    updateTeacherSelectors();
-                    initPrograms();
-                    renderAytoProjects();
-                    renderCourses();
-                    document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                    const dossierCourseEl = document.getElementById('dossier-course');
-                    if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
-                    syncAytoCourse();
-                    saveLastUpdate('firebase');
+                    applyFirebaseData(data);
                     showNotification('Datos cargados desde Firebase correctamente');
                 } else {
                     showNotification('Formato de datos incorrecto en Firebase.', 'error');
@@ -1484,22 +1462,7 @@
                 }
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
-                    appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
-                    appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
-                    appState.selectedCourse = data.selectedCourse || getCurrentCourse();
-                    ensureActiveCourseData();
-                    appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
-                    if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
-                    localStorage.setItem('programsAppData', JSON.stringify(appState));
-                    updateTeacherSelectors();
-                    initPrograms();
-                    renderAytoProjects();
-                    renderCourses();
-                    document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                    const dossierCourseEl = document.getElementById('dossier-course');
-                    if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
-                    syncAytoCourse();
-                    saveLastUpdate('firebase');
+                    applyFirebaseData(data);
                     showNotification('Datos cargados desde Firebase correctamente');
                     updateFirebaseStatus(true);
                     return true;
@@ -1607,22 +1570,7 @@
                 if (!snapshot.exists()) throw new Error('Copia no encontrada');
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
-                    appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
-                    appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
-                    appState.selectedCourse = data.selectedCourse || getCurrentCourse();
-                    ensureActiveCourseData();
-                    appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
-                    if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
-                    localStorage.setItem('programsAppData', JSON.stringify(appState));
-                    updateTeacherSelectors();
-                    initPrograms();
-                    renderAytoProjects();
-                    renderCourses();
-                    document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                    const dossierCourseEl = document.getElementById('dossier-course');
-                    if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
-                    syncAytoCourse();
-                    saveLastUpdate('firebase');
+                    applyFirebaseData(data);
                     showNotification('Copia restaurada correctamente');
                 } else throw new Error('Formato incorrecto.');
             } catch (e) {
@@ -1787,7 +1735,7 @@
 
                     const coordText = `
                         <div class="coord-label" id="coord-${program.id}" ${participation.coordinator ? '' : 'style="display:none;"'}>
-                            <span class="label">Coordinación:</span> <span class="coord-name">${participation.coordinator || ''}</span>
+                            <span class="label">Coordinación:</span> <span class="coord-name">${escapeHtml(participation.coordinator)}</span>
                         </div>
                     `;
 
@@ -1888,8 +1836,6 @@
         function initEvents() {
             document.getElementById('close-modal').addEventListener('click', closeCoordinatorModal);
             document.getElementById('cancel-coordinator').addEventListener('click', closeCoordinatorModal);
-            document.getElementById('close-project-modal').addEventListener('click', closeProjectModal);
-            document.getElementById('close-project-btn').addEventListener('click', closeProjectModal);
 
             document.getElementById('save-to-firebase').addEventListener('click', saveToFirebase);
             document.getElementById('load-from-firebase').addEventListener('click', loadFromFirebase);
@@ -1954,7 +1900,6 @@
         }
 
         function closeCoordinatorModal() { document.getElementById('coordinator-modal').classList.remove('active'); }
-        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
 
         function initNavigation() {
             const navButtons = document.querySelectorAll('.nav-btn, .back-btn');
@@ -2211,12 +2156,13 @@
         // FUNCIONES DE GESTIÓN DINÁMICA DE PROYECTOS AYUNTAMIENTO
         // ================================================
 
-        function generateAytoId(nombre) {
-            return 'ayto-' + nombre.toLowerCase()
+        function generateAytoId(nombre, index) {
+            const base = 'ayto-' + nombre.toLowerCase()
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '')
-                .substring(0, 40);
+                .substring(0, 36);
+            return index !== undefined ? `${base}-${index}` : base;
         }
 
         function renderAytoProjects() {
@@ -2243,7 +2189,7 @@
                 : [];
 
             projects.forEach((proj, index) => {
-                const id = generateAytoId(proj.nombre);
+                const id = generateAytoId(proj.nombre, index);
                 const wrapper = document.createElement('div');
                 wrapper.className = 'ayto-project-btn-wrapper';
 
@@ -2265,7 +2211,7 @@
 
                 wrapper.innerHTML = `
                     <button class="ayto-project-btn ${index === 0 ? 'active' : ''}" data-project="${id}" data-index="${index}">
-                        ${proj.nombre}
+                        ${escapeHtml(proj.nombre)}
                     </button>
                     <div class="btn-group">
                         <button class="btn-sm edit" data-index="${index}" title="Editar proyecto"><i class="fas fa-pen"></i></button>
@@ -2279,7 +2225,7 @@
             // Generar paneles de detalle
             panelsContainer.innerHTML = '';
             projects.forEach((proj, index) => {
-                const id = generateAytoId(proj.nombre);
+                const id = generateAytoId(proj.nombre, index);
                 const panel = document.createElement('div');
                 panel.id = id;
                 panel.className = `ayto-project-info ${index === 0 ? 'active' : ''}`;
@@ -2287,27 +2233,27 @@
                 let actividadesHtml = '';
                 if (proj.actividades && proj.actividades.length > 0) {
                     actividadesHtml = '<ul class="ayto-activities-list">' +
-                        proj.actividades.map(a => `<li>${a}</li>`).join('') +
+                        proj.actividades.map(a => `<li>${escapeHtml(a)}</li>`).join('') +
                         '</ul>';
                 } else {
                     actividadesHtml = '<p style="color: var(--gray); font-style: italic;">Sin actividades definidas.</p>';
                 }
 
                 panel.innerHTML = `
-                    <h2 class="ayto-project-title">${proj.nombre}</h2>
+                    <h2 class="ayto-project-title">${escapeHtml(proj.nombre)}</h2>
                     <div class="project-details">
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Concertación</div>
-                            <p>${proj.concertacion || 'No especificada'}</p>
+                            <p>${escapeHtml(proj.concertacion) || 'No especificada'}</p>
                         </div>
-                        ${proj.nivel ? `<div class="ayto-detail-card"><div class="ayto-detail-title">Nivel</div><p>${proj.nivel}</p></div>` : ''}
+                        ${proj.nivel ? `<div class="ayto-detail-card"><div class="ayto-detail-title">Nivel</div><p>${escapeHtml(proj.nivel)}</p></div>` : ''}
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Técnico/a responsable</div>
-                            <p>${proj.tecnico || 'No especificado/a'}</p>
+                            <p>${escapeHtml(proj.tecnico) || 'No especificado/a'}</p>
                         </div>
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Objetivo</div>
-                            <p>${proj.objetivo || 'No especificado'}</p>
+                            <p>${escapeHtml(proj.objetivo) || 'No especificado'}</p>
                         </div>
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Actividades</div>
@@ -2315,11 +2261,11 @@
                         </div>
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Destinatarios</div>
-                            <p>${proj.destinatarios || 'No especificados'}</p>
+                            <p>${escapeHtml(proj.destinatarios) || 'No especificados'}</p>
                         </div>
                         <div class="ayto-detail-card">
                             <div class="ayto-detail-title">Fechas</div>
-                            <p>${proj.fechas || 'No especificadas'}</p>
+                            <p>${escapeHtml(proj.fechas) || 'No especificadas'}</p>
                         </div>
                     </div>
                 `;
@@ -2346,6 +2292,11 @@
                 });
             });
         }
+
+        // Cerrar dropdown al hacer clic fuera (registrado una sola vez)
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.transfer-dropdown.active').forEach(d => d.classList.remove('active'));
+        });
 
         function bindAytoManagementEvents() {
             // Edit buttons
@@ -2387,11 +2338,6 @@
                     // Cerrar dropdown
                     document.querySelectorAll('.transfer-dropdown.active').forEach(d => d.classList.remove('active'));
                 });
-            });
-
-            // Cerrar dropdown al hacer clic fuera
-            document.addEventListener('click', function() {
-                document.querySelectorAll('.transfer-dropdown.active').forEach(d => d.classList.remove('active'));
             });
         }
 
@@ -2564,13 +2510,18 @@
                 const goodChar = replacements[badChar];
                 normalized = normalized.replace(new RegExp(badChar, 'g'), goodChar);
             });
+            // Solo aplicar TextDecoder si se detectaron patrones mojibake (evita corromper UTF-8 correcto)
             if (typeof TextDecoder !== 'undefined') {
                 try {
                     const bytes = new Uint8Array(normalized.length);
                     for (let i = 0; i < normalized.length; i++) bytes[i] = normalized.charCodeAt(i);
                     const decoder = new TextDecoder('latin1');
-                    normalized = decoder.decode(bytes);
-                } catch (e) { console.warn('No se pudo decodificar con TextDecoder:', e); }
+                    const decoded = decoder.decode(bytes);
+                    // Solo usar si el resultado es diferente y no contiene caracteres de reemplazo
+                    if (decoded !== normalized && !/[\ufffd]/.test(decoded)) {
+                        normalized = decoded;
+                    }
+                } catch (e) { /* ignorar */ }
             }
             return normalized.trim();
         }
@@ -2676,7 +2627,7 @@
                 item.className = 'teacher-item';
                 item.innerHTML = `
                     <span class="teacher-item-index">${index + 1}</span>
-                    <span class="teacher-item-name">${teacher}</span>
+                    <span class="teacher-item-name">${escapeHtml(teacher)}</span>
                     <div style="display:flex;gap:4px;">
                         <button class="btn-sm edit" data-index="${index}" title="Editar"><i class="fas fa-pen"></i></button>
                         <button class="btn-sm delete" data-index="${index}" title="Eliminar"><i class="fas fa-trash"></i></button>
@@ -2891,32 +2842,6 @@
                     if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
                     syncAytoCourse();
                     if (getActiveTeachers().length > 0) updateTeacherSelectors();
-                    // Refrescar UI
-                    for (const type in programsData) {
-                        programsData[type].forEach(program => {
-                            const participation = getActiveParticipation()[program.id];
-                            const coordLabel = document.getElementById(`coord-${program.id}`);
-                            const coordinatorBtn = document.getElementById(`coordinator-${program.id}`);
-                            const checkbox = document.getElementById(`check-${program.id}`);
-                            if (coordLabel && coordinatorBtn && checkbox) {
-                                const hasCoord = participation && participation.coordinator;
-                                const participates = participation && participation.participates;
-                                if (hasCoord) {
-                                    coordLabel.style.display = 'block';
-                                    const nameEl = coordLabel.querySelector('.coord-name');
-                                    if (nameEl) nameEl.textContent = participation.coordinator;
-                                    coordinatorBtn.innerHTML = '<i class="fas fa-user-edit"></i> Reasignar coordinación';
-                                    coordinatorBtn.classList.add('reassign');
-                                } else {
-                                    coordLabel.style.display = 'none';
-                                    coordinatorBtn.innerHTML = '<i class="fas fa-user-edit"></i> Asignar coordinación';
-                                    coordinatorBtn.classList.remove('reassign');
-                                }
-                                coordinatorBtn.style.display = participates ? 'block' : 'none';
-                                checkbox.checked = !!participates;
-                            }
-                        });
-                    }
                     alert('Datos importados correctamente.');
                 } catch (error) {
                     alert('Error al importar los datos. Verifique que el archivo es válido.');
@@ -3211,11 +3136,6 @@
         // INICIALIZACIÓN
         // ================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            // Always init navigation, collapsibles and ayto tab (they work behind login screen)
-            initNavigation();
-            initCollapsibles();
-            initAytoTab();
-
             // Check if user has an existing session
             const hasSession = await checkExistingSession();
             if (hasSession) {
