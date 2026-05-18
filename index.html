@@ -1020,6 +1020,7 @@
 
         // Variables para auto-guardado
         let autoSaveInterval = null;
+        let autoSaveTimeout = null;
         let lastAutoSaveTime = null;
         let isLoadingFromCloud = false;
 
@@ -1096,9 +1097,8 @@
 
             if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
 
-            // Determine if this is the first user (admin)
-            const userCount = Object.keys(users).length;
-            const rol = userCount === 0 ? 'admin' : 'usuario';
+            // New users are always "usuario" role — admins are created through the admin panel
+            const rol = 'usuario';
 
             const hashedPw = await hashPassword(password);
             await db.ref(`usuarios/${username}`).set({
@@ -1108,7 +1108,7 @@
                 fechaRegistroLocal: new Date().toLocaleString('es-ES')
             });
 
-            return { ok: true, msg: rol === 'admin' ? 'Cuenta creada como ADMINISTRADOR.' : 'Cuenta creada correctamente.', rol: rol };
+            return { ok: true, msg: 'Cuenta creada correctamente. Un administrador debe activarla.', rol: rol };
         }
 
         async function loginUser(username, password) {
@@ -1370,18 +1370,20 @@
                 const isSelf = username === currentUser.username;
                 const tr = document.createElement('tr');
                 const dateStr = data.fechaRegistroLocal || new Date(data.fechaRegistro).toLocaleString('es-ES');
+                const safeUsername = escapeHtml(username);
+                const safeRol = escapeHtml(data.rol || 'usuario');
                 tr.innerHTML = `
-                    <td><strong>${username}</strong> ${isSelf ? '<span style="color:var(--gray);font-size:0.75rem;">(tu)</span>' : ''}</td>
-                    <td><span class="role-badge ${data.rol}\">${data.rol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
+                    <td><strong>${safeUsername}</strong> ${isSelf ? '<span style="color:var(--gray);font-size:0.75rem;">(tu)</span>' : ''}</td>
+                    <td><span class="role-badge ${safeRol}">${safeRol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
                     <td style="font-size:0.8rem; color:var(--gray);">${dateStr}</td>
                     <td>
                         ${!isSelf ? `
                             <button class="action-btn-sm" style="background:${data.rol === 'admin' ? '#e9ecef' : 'var(--accent)'}; color:${data.rol === 'admin' ? 'var(--dark)' : 'white'};"
-                                onclick="toggleUserRole('${username}', '${data.rol === 'admin' ? 'usuario' : 'admin'}'); loadUsersAdminModal();">
+                                onclick="toggleUserRole('${safeUsername}', '${data.rol === 'admin' ? 'usuario' : 'admin'}'); loadUsersAdminModal();">
                                 ${data.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}
                             </button>
                             <button class="action-btn-sm" style="background:var(--danger); color:white; margin-left:4px;"
-                                onclick="if(confirm('Seguro que deseas eliminar al usuario ${username}?')){deleteUserAccount('${username}').then(()=>loadUsersAdminModal());}">
+                                onclick="if(confirm('Seguro que deseas eliminar al usuario ${safeUsername}?')){deleteUserAccount('${safeUsername}').then(()=>loadUsersAdminModal());}">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         ` : '<span style="color:var(--gray);font-size:0.8rem;">--</span>'}
@@ -1667,16 +1669,19 @@
 
         function startAutoSave() {
             if (autoSaveInterval) clearInterval(autoSaveInterval);
+            if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
             console.log('Guardado automático activado en Firebase (cada 5 minutos)');
-            setTimeout(() => autoSaveFirebase(), 30000);
+            autoSaveTimeout = setTimeout(() => autoSaveFirebase(), 30000);
             autoSaveInterval = setInterval(autoSaveFirebase, 5 * 60 * 1000);
         }
 
         function stopAutoSave() {
             if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null; }
+            if (autoSaveTimeout) { clearTimeout(autoSaveTimeout); autoSaveTimeout = null; }
         }
 
         async function autoSaveFirebase() {
+            if (!isAdminUser()) return;
             if (getActiveTeachers().length === 0 && Object.keys(getActiveParticipation()).length === 0) return;
             if (lastAutoSaveTime && (Date.now() - lastAutoSaveTime < 2 * 60 * 1000)) return;
             try {
@@ -1906,8 +1911,8 @@
             const aytoCourseEl = document.getElementById('ayto-course-subtitle');
             const aytoFooterCourseEl = document.getElementById('ayto-footer-course');
             const selected = appState.selectedCourse || getCurrentCourse();
-            if (aytoCourseEl) aytoCourseEl.textContent = selected.replace('-', '/');
-            if (aytoFooterCourseEl) aytoFooterCourseEl.textContent = selected.replace('-', '/');
+            if (aytoCourseEl) aytoCourseEl.textContent = selected.replace(/-/g, '/');
+            if (aytoFooterCourseEl) aytoFooterCourseEl.textContent = selected.replace(/-/g, '/');
         }
 
         function initPrograms() {
@@ -3189,15 +3194,17 @@
                 </thead>
                 <tbody>`;
                     reportData[type].forEach(item => {
+                        const safeProgram = item.program.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                        const safeCoordinator = item.coordinator.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
                         htmlContent += `
                     <tr>
                         <td>
                             ${item.url ? 
-                                `<a href="${item.url}" target="_blank" class="program-link">${item.program}</a>` : 
-                                item.program
+                                `<a href="${item.url}" target="_blank" class="program-link">${safeProgram}</a>` : 
+                                safeProgram
                             }
                         </td>
-                        <td class="coordinator-name">${item.coordinator}</td>
+                        <td class="coordinator-name">${safeCoordinator}</td>
                     </tr>`;
                     });
                     htmlContent += `
