@@ -1,10 +1,11 @@
-const CACHE_NAME = 'planes-programas-v1.1';
+const CACHE_NAME = 'planes-programas-v1';
 const BASE_PATH = '/PlanesProgramasV2/';
 
 const PRECACHE_URLS = [
     BASE_PATH,
     BASE_PATH + 'index.html',
     BASE_PATH + 'manifest.json',
+    BASE_PATH + 'favicon.png',
     BASE_PATH + 'icon-192.png',
     BASE_PATH + 'icon-512.png'
 ];
