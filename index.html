@@ -566,7 +566,7 @@
                     <button class="nav-btn active" data-page="home">
                         <i class="fas fa-home"></i> Inicio
                     </button>
-                    <a id="dossier-btn" class="nav-btn" href="https://www.juntadeandalucia.es/educacion/portales/documents/20123/2475523/17092025_dosier_programas_educativos.pdf/4272f22a-ec05-b29c-e75a-0e16ded1faf2?t=1758094184028" target="_blank" rel="noopener">
+                    <a id="dossier-btn" class="nav-btn" href="#" target="_blank" rel="noopener">
                         <i class="fas fa-book"></i> Dossier Programas <span id="dossier-course">2025-2026</span>
                     </a>
                     <button class="nav-btn" data-page="ayto-projects">
@@ -618,6 +618,19 @@
                         </div>
                     </div>
                     
+                    <div class="form-group" id="dossier-url-group">
+                        <label for="dossier-url-input"><i class="fas fa-link"></i> URL del Dossier para el curso <span id="dossier-url-course-label" style="color: var(--primary);"></span>:</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="url" id="dossier-url-input" class="form-control" placeholder="https://ejemplo.com/dossier_2025-2026.pdf" style="flex: 1;">
+                            <button type="button" class="btn" id="save-dossier-url-btn" style="background: var(--secondary); color: white; white-space: nowrap;">
+                                <i class="fas fa-save"></i> Guardar URL
+                            </button>
+                        </div>
+                        <small style="display: block; margin-top: 5px; color: var(--gray); font-size: 0.8rem;">
+                            Enlace del dossier oficial de Planes y Programas para este curso. Si se deja vacío se usará la URL por defecto.
+                        </small>
+                    </div>
+
                     <div class="form-group">
                         <label for="teacher-file">Importar listado de profesorado:</label>
                         <input type="file" id="teacher-file" class="form-control" accept=".txt,.csv">
@@ -972,8 +985,14 @@
             selectedCourse: '',
             teachers: {},        // Objeto indexado por curso: { '2025-2026': ['Prof1', ...], ... }
             aytoProjects: {},    // Objeto indexado por curso: { '2025-2026': [...], ... }
-            coursesList: []
+            coursesList: [],
+            dossierUrls: {
+                '2025-2026': 'https://www.juntadeandalucia.es/educacion/portales/documents/20123/2475523/17092025_dosier_programas_educativos.pdf/4272f22a-ec05-b29c-e75a-0e16ded1faf2?t=1758094184028'
+            }
         };
+
+        // URL por defecto del dossier (si no se configura una personalizada para un curso)
+        const DEFAULT_DOSSIER_URL = 'https://www.juntadeandalucia.es/educacion/portales/documents/20123/2475523/17092025_dosier_programas_educativos.pdf/4272f22a-ec05-b29c-e75a-0e16ded1faf2?t=1758094184028';
 
         // Cursos académicos por defecto
         const defaultCoursesList = ['2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030'];
@@ -1562,7 +1581,8 @@
                 teachers: appState.teachers,
                 selectedCourse: appState.selectedCourse,
                 aytoProjects: appState.aytoProjects || {},
-                coursesList: appState.coursesList || []
+                coursesList: appState.coursesList || [],
+                dossierUrls: appState.dossierUrls || {}
             };
         }
 
@@ -1602,14 +1622,14 @@
             ensureActiveCourseData();
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
+            if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
             renderAytoProjects();
             renderCourses();
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-            const dossierCourseEl = document.getElementById('dossier-course');
-            if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+            updateDossierButton();
             syncAytoCourse();
             saveLastUpdate('firebase');
         }
@@ -1872,7 +1892,8 @@
                         selectedCourse: selCourse,
                         teachers: normalizeTeachers(parsed.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(parsed.aytoProjects, selCourse),
-                        coursesList: parsed.coursesList || []
+                        coursesList: parsed.coursesList || [],
+                        dossierUrls: parsed.dossierUrls || {}
                     };
                 } catch (e) { console.warn('Error al cargar datos guardados'); }
             }
@@ -1897,8 +1918,7 @@
             ensureActiveCourseData();
             renderCourses();
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-            const dossierCourseEl = document.getElementById('dossier-course');
-            if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+            updateDossierButton();
             syncAytoCourse();
             if (getActiveTeachers().length > 0) updateTeacherSelectors();
         }
@@ -1913,6 +1933,61 @@
             const selected = appState.selectedCourse || getCurrentCourse();
             if (aytoCourseEl) aytoCourseEl.textContent = selected.replace(/-/g, '/');
             if (aytoFooterCourseEl) aytoFooterCourseEl.textContent = selected.replace(/-/g, '/');
+        }
+
+        // ================================================
+        // GESTIÓN DE URL DEL DOSSIER POR CURSO
+        // ================================================
+
+        function updateDossierButton() {
+            const dossierBtn = document.getElementById('dossier-btn');
+            const dossierCourseEl = document.getElementById('dossier-course');
+            const dossierUrlInput = document.getElementById('dossier-url-input');
+            const dossierUrlLabel = document.getElementById('dossier-url-course-label');
+            const selected = appState.selectedCourse || getCurrentCourse();
+
+            // Actualizar texto del curso en el botón
+            if (dossierCourseEl) dossierCourseEl.textContent = selected;
+
+            // Actualizar label del input de configuración
+            if (dossierUrlLabel) dossierUrlLabel.textContent = selected;
+
+            // Obtener URL personalizada para este curso (si existe)
+            const customUrl = (appState.dossierUrls && appState.dossierUrls[selected]) || '';
+            const finalUrl = customUrl.trim() || DEFAULT_DOSSIER_URL;
+
+            // Actualizar href del botón del dossier
+            if (dossierBtn) dossierBtn.href = finalUrl;
+
+            // Actualizar el input de configuración
+            if (dossierUrlInput) dossierUrlInput.value = customUrl;
+        }
+
+        function saveDossierUrl() {
+            const input = document.getElementById('dossier-url-input');
+            if (!input) return;
+            const url = input.value.trim();
+            const selected = appState.selectedCourse || getCurrentCourse();
+
+            if (!appState.dossierUrls) appState.dossierUrls = {};
+
+            if (url === '') {
+                // Si se vacía, eliminar la URL personalizada para este curso
+                delete appState.dossierUrls[selected];
+            } else {
+                // Validar que es una URL válida
+                try {
+                    new URL(url);
+                } catch (e) {
+                    showNotification('URL no válida. Debe empezar con http:// o https://', 'error');
+                    return;
+                }
+                appState.dossierUrls[selected] = url;
+            }
+
+            saveData();
+            updateDossierButton();
+            showNotification(url ? `URL del dossier guardada para el curso ${selected}.` : `URL del dossier eliminada para el curso ${selected}. Se usará la URL por defecto.`);
         }
 
         function initPrograms() {
@@ -2082,6 +2157,12 @@
             });
             document.getElementById('teacher-file').addEventListener('change', handleTeacherFile);
 
+            // Eventos de gestión de URL del dossier
+            document.getElementById('save-dossier-url-btn').addEventListener('click', saveDossierUrl);
+            document.getElementById('dossier-url-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); saveDossierUrl(); }
+            });
+
             // Eventos de gestión de proyectos ayto
             document.getElementById('add-ayto-project-btn').addEventListener('click', function() {
                 openAytoProjectModal(-1);
@@ -2180,8 +2261,7 @@
             updateTeacherSelectors();
             // Actualizar la UI del curso en header y dossier
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-            const dossierCourseEl = document.getElementById('dossier-course');
-            if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+            updateDossierButton();
             syncAytoCourse();
             showNotification(`Curso activo: ${appState.selectedCourse}`);
         }
@@ -2317,8 +2397,7 @@
             if (appState.selectedCourse === oldCourse) {
                 appState.selectedCourse = value;
                 document.getElementById('course-subtitle').textContent = `Curso ${value}`;
-                const dossierCourseEl = document.getElementById('dossier-course');
-                if (dossierCourseEl) dossierCourseEl.textContent = value;
+                updateDossierButton();
                 syncAytoCourse();
             }
             saveData();
@@ -2341,8 +2420,7 @@
             if (isActive) {
                 appState.selectedCourse = appState.coursesList[0];
                 document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                const dossierCourseEl = document.getElementById('dossier-course');
-                if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+                updateDossierButton();
                 syncAytoCourse();
             }
             saveData();
@@ -3001,7 +3079,8 @@
                 selectedCourse: appState.selectedCourse,
                 teachers: appState.teachers,
                 aytoProjects: appState.aytoProjects || {},
-                coursesList: appState.coursesList || []
+                coursesList: appState.coursesList || [],
+                dossierUrls: appState.dossierUrls || {}
             };
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -3028,7 +3107,8 @@
                         selectedCourse: selCourse,
                         teachers: normalizeTeachers(importedData.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(importedData.aytoProjects, selCourse),
-                        coursesList: importedData.coursesList || []
+                        coursesList: importedData.coursesList || [],
+                        dossierUrls: importedData.dossierUrls || {}
                     };
                     // Asegurar datos para el curso activo
                     ensureActiveCourseData();
@@ -3046,8 +3126,7 @@
                     renderAytoProjects();
                     renderCourses();
                     document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                    const dossierCourseEl = document.getElementById('dossier-course');
-                    if (dossierCourseEl) dossierCourseEl.textContent = appState.selectedCourse;
+                    updateDossierButton();
                     syncAytoCourse();
                     if (getActiveTeachers().length > 0) updateTeacherSelectors();
                     alert('Datos importados correctamente.');
