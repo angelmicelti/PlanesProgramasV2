@@ -1683,6 +1683,9 @@
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
             if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
+            // Forzar la URL del dossier para cursos bloqueados (no se puede alterar ni en Firebase)
+            if (!appState.dossierUrls) appState.dossierUrls = {};
+            appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
@@ -2048,6 +2051,9 @@
                     };
                 } catch (e) { console.warn('Error al cargar datos guardados'); }
             }
+            // Forzar la URL del dossier para cursos bloqueados
+            if (!appState.dossierUrls) appState.dossierUrls = {};
+            appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
             // Asegurar datos para el curso activo
             ensureActiveCourseData();
             // Si no hay proyectos ayto, inicializar con los defaults para el curso seleccionado
@@ -3296,7 +3302,9 @@
                         coursesList: importedData.coursesList || [],
                         dossierUrls: importedData.dossierUrls || {}
                     };
-                    // Asegurar datos para el curso activo
+                    // Forzar la URL del dossier para cursos bloqueados
+                    if (!appState.dossierUrls) appState.dossierUrls = {};
+                    appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
                     ensureActiveCourseData();
                     // Si no hay proyectos ayto importados, mantener los actuales
                     const importedCourse = appState.selectedCourse;
