@@ -502,8 +502,8 @@
                     <input type="text" id="login-username" class="form-control" placeholder="Introduce tu usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">Contraseña</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contraseña" autocomplete="current-password">
+                    <label for="login-password">Contrasena</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contrasena" autocomplete="current-password">
                 </div>
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
@@ -517,12 +517,12 @@
                     <input type="text" id="register-username" class="form-control" placeholder="Elige un nombre de usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="register-password">Contraseña</label>
-                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contraseña" autocomplete="new-password">
+                    <label for="register-password">Contrasena</label>
+                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contrasena" autocomplete="new-password">
                 </div>
                 <div class="form-group">
-                    <label for="register-password2">Confirmar Contraseña</label>
-                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contraseña" autocomplete="new-password">
+                    <label for="register-password2">Confirmar Contrasena</label>
+                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contrasena" autocomplete="new-password">
                 </div>
                 <button id="register-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
                 <div class="login-error" id="register-error"></div>
@@ -780,7 +780,7 @@
             <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento</h2>
             <div class="ayto-header">
                 <div class="container">
-                    <h1 class="ayto-title">Proyectos en colaboración con el <br> Área de Juventud del Ayuntamiento de Peñaflor</h1>
+                    <h1 class="ayto-title">Proyectos en colaboración con el Área de Juventud del Ayuntamiento de Peñaflor</h1>
                     <p class="ayto-subtitle">Curso <span id="ayto-course-subtitle">2025/2026</span></p>
                 </div>
             </div>
@@ -913,12 +913,12 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="admin-new-password" style="font-size: 0.85rem;">Contraseña</label>
-                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <label for="admin-new-password" style="font-size: 0.85rem;">Contrasena</label>
+                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="admin-new-password2" style="font-size: 0.85rem;">Confirmar</label>
-                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                     </div>
                     <div id="admin-add-user-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px; min-height: 18px;"></div>
@@ -1126,7 +1126,7 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
+            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
 
             // Check if user already exists
             const snapshot = await db.ref('usuarios').once('value');
@@ -1150,14 +1150,14 @@
 
         async function loginUser(username, password) {
             username = username.trim().toLowerCase();
-            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contraseña.' };
+            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contrasena.' };
 
             const snapshot = await db.ref(`usuarios/${username}`).once('value');
             const userData = snapshot.val();
-            if (!userData) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
+            if (!userData) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
 
             const hashedPw = await hashPassword(password);
-            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
+            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
 
             return { ok: true, msg: 'Inicio de sesion correcto.', rol: userData.rol };
         }
@@ -1320,7 +1320,7 @@
                 const errorEl = document.getElementById('register-error');
                 errorEl.textContent = '';
 
-                if (password !== password2) { errorEl.textContent = 'Las contraseñas no coinciden.'; return; }
+                if (password !== password2) { errorEl.textContent = 'Las contrasenas no coinciden.'; return; }
                 const result = await registerUser(username, password);
                 if (result.ok) {
                     // Auto-login after registration
@@ -1443,8 +1443,8 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
-            if (password !== password2) return { ok: false, msg: 'Las contraseñas no coinciden.' };
+            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
+            if (password !== password2) return { ok: false, msg: 'Las contrasenas no coinciden.' };
             if (!rol || !['admin', 'usuario'].includes(rol)) rol = 'usuario';
 
             // Check if user already exists
@@ -2092,18 +2092,33 @@
         // GESTIÓN DE URL DEL DOSSIER POR CURSO
         // ================================================
 
+        // Curso cuyo dossier tiene URL fija y no se puede editar
+        const LOCKED_DOSSIER_COURSE = '2025-2026';
+
+        function isDossierLocked(course) {
+            return course === LOCKED_DOSSIER_COURSE;
+        }
+
         function updateDossierButton() {
             const dossierBtn = document.getElementById('dossier-btn');
             const dossierCourseEl = document.getElementById('dossier-course');
             const dossierUrlInput = document.getElementById('dossier-url-input');
             const dossierUrlLabel = document.getElementById('dossier-url-course-label');
+            const dossierUrlGroup = document.getElementById('dossier-url-group');
+            const saveBtn = document.getElementById('save-dossier-url-btn');
             const selected = appState.selectedCourse || getCurrentCourse();
+            const locked = isDossierLocked(selected);
 
             // Actualizar texto del curso en el botón
             if (dossierCourseEl) dossierCourseEl.textContent = selected;
 
             // Actualizar label del input de configuración
-            if (dossierUrlLabel) dossierUrlLabel.textContent = selected;
+            if (dossierUrlLabel) {
+                dossierUrlLabel.textContent = selected;
+                if (locked) {
+                    dossierUrlLabel.innerHTML = selected + ' <i class="fas fa-lock" style="color: var(--danger); font-size: 0.8em;" title="URL fija, no modificable"></i>';
+                }
+            }
 
             // Obtener URL personalizada para este curso (si existe)
             const customUrl = (appState.dossierUrls && appState.dossierUrls[selected]) || '';
@@ -2113,14 +2128,32 @@
             if (dossierBtn) dossierBtn.href = finalUrl;
 
             // Actualizar el input de configuración
-            if (dossierUrlInput) dossierUrlInput.value = customUrl;
+            if (dossierUrlInput) {
+                dossierUrlInput.value = customUrl;
+                dossierUrlInput.readOnly = locked;
+                dossierUrlInput.style.opacity = locked ? '0.6' : '1';
+                dossierUrlInput.style.cursor = locked ? 'not-allowed' : 'auto';
+            }
+            // Bloquear/desbloquear botón de guardar
+            if (saveBtn) {
+                saveBtn.disabled = locked;
+                saveBtn.style.opacity = locked ? '0.5' : '1';
+                saveBtn.style.cursor = locked ? 'not-allowed' : 'pointer';
+            }
         }
 
         function saveDossierUrl() {
             const input = document.getElementById('dossier-url-input');
             if (!input) return;
-            const url = input.value.trim();
             const selected = appState.selectedCourse || getCurrentCourse();
+
+            // Bloquear edición para el curso con URL fija
+            if (isDossierLocked(selected)) {
+                showNotification('La URL del dossier de este curso es fija y no se puede modificar.', 'error');
+                return;
+            }
+
+            const url = input.value.trim();
 
             if (!appState.dossierUrls) appState.dossierUrls = {};
 
