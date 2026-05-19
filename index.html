@@ -78,6 +78,9 @@
         .program-check { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
         .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .check-label input { width: 18px; height: 18px; }
+        /* Bloquear interacción en modo solo lectura */
+        body.readonly-mode .program-check input[type="checkbox"] { pointer-events: none; opacity: 0.6; }
+        body.readonly-mode .coordinator-btn { pointer-events: none; opacity: 0.5; }
 
         .coordinator-btn { background: var(--secondary); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: var(--transition); margin-top: 10px; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
         .coordinator-btn.reassign { background: #1f8f52; }
@@ -1159,6 +1162,11 @@
         async function toggleUserRole(username, newRol) {
             if (!currentUser || currentUser.rol !== 'admin') return;
             if (username === currentUser.username) return; // Can't change own role
+            // Impedir que el usuario por defecto "usuario" sea promovido a admin
+            if (username.toLowerCase() === 'usuario') {
+                showNotification('No se puede cambiar el rol del usuario por defecto.', 'error');
+                return;
+            }
             await db.ref(`usuarios/${username}/rol`).set(newRol);
         }
 
@@ -1396,7 +1404,7 @@
                     <td><span class="role-badge ${safeRol}">${safeRol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
                     <td style="font-size:0.8rem; color:var(--gray);">${dateStr}</td>
                     <td>
-                        ${!isSelf ? `
+                        ${!isSelf && !(safeUsername === 'usuario') ? `
                             <button class="action-btn-sm" style="background:${data.rol === 'admin' ? '#e9ecef' : 'var(--accent)'}; color:${data.rol === 'admin' ? 'var(--dark)' : 'white'};"
                                 onclick="toggleUserRole('${safeUsername}', '${data.rol === 'admin' ? 'usuario' : 'admin'}'); loadUsersAdminModal();">
                                 ${data.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}
