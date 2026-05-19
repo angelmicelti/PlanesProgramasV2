@@ -181,6 +181,14 @@
             cursor: pointer; transition: opacity 0.3s;
         }
         .last-update-indicator.fade-out { opacity: 0; }
+        .last-update-indicator.syncing { border-left: 3px solid #2196F3; }
+        .last-update-indicator.synced { border-left: 3px solid var(--secondary); }
+        .last-update-indicator.sync-error { border-left: 3px solid var(--danger); }
+        .sync-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.5s infinite; }
+        .sync-pulse.blue { background: #2196F3; }
+        .sync-pulse.green { background: var(--secondary); animation: none; }
+        .sync-pulse.red { background: var(--danger); animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
         .hidden { display: none !important; }
 
         .notification-area {
@@ -494,8 +502,8 @@
                     <input type="text" id="login-username" class="form-control" placeholder="Introduce tu usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">Contraseña</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contraseña" autocomplete="current-password">
+                    <label for="login-password">Contrasena</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contrasena" autocomplete="current-password">
                 </div>
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
@@ -509,12 +517,12 @@
                     <input type="text" id="register-username" class="form-control" placeholder="Elige un nombre de usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="register-password">Contraseña</label>
-                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contraseña" autocomplete="new-password">
+                    <label for="register-password">Contrasena</label>
+                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contrasena" autocomplete="new-password">
                 </div>
                 <div class="form-group">
-                    <label for="register-password2">Confirmar Contraseña</label>
-                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contraseña" autocomplete="new-password">
+                    <label for="register-password2">Confirmar Contrasena</label>
+                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contrasena" autocomplete="new-password">
                 </div>
                 <button id="register-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
                 <div class="login-error" id="register-error"></div>
@@ -905,12 +913,12 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="admin-new-password" style="font-size: 0.85rem;">Contraseña</label>
-                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <label for="admin-new-password" style="font-size: 0.85rem;">Contrasena</label>
+                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="admin-new-password2" style="font-size: 0.85rem;">Confirmar</label>
-                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                     </div>
                     <div id="admin-add-user-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px; min-height: 18px;"></div>
@@ -1046,6 +1054,13 @@
         let lastAutoSaveTime = null;
         let isLoadingFromCloud = false;
 
+        // --- Sincronización en tiempo real con Firebase ---
+        let firebaseDataListener = null;   // Referencia al listener onValue
+        let isLocalSave = false;           // Flag: true cuando nosotros escribimos
+        let syncDebounceTimer = null;      // Timer para debuncar escrituras Firebase
+        let lastRemoteDataHash = '';       // Hash del último dato remoto (evitar re-render innecesario)
+        const SYNC_DEBOUNCE_MS = 1500;     // Espera antes de enviar cambios a Firebase
+
         // Datos de los programas
         const programsData = {
             'type-a': [
@@ -1111,7 +1126,7 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
+            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
 
             // Check if user already exists
             const snapshot = await db.ref('usuarios').once('value');
@@ -1135,14 +1150,14 @@
 
         async function loginUser(username, password) {
             username = username.trim().toLowerCase();
-            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contraseña.' };
+            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contrasena.' };
 
             const snapshot = await db.ref(`usuarios/${username}`).once('value');
             const userData = snapshot.val();
-            if (!userData) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
+            if (!userData) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
 
             const hashedPw = await hashPassword(password);
-            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
+            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
 
             return { ok: true, msg: 'Inicio de sesion correcto.', rol: userData.rol };
         }
@@ -1212,8 +1227,11 @@
             // Show login form
             document.getElementById('login-form-container').style.display = 'block';
             document.getElementById('register-form-container').style.display = 'none';
-            // Stop autosave
+            // Stop autosave and realtime sync
             stopAutoSave();
+            stopRealtimeSync();
+            // Cancel any pending debounced save
+            if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
         }
 
         async function checkExistingSession() {
@@ -1302,7 +1320,7 @@
                 const errorEl = document.getElementById('register-error');
                 errorEl.textContent = '';
 
-                if (password !== password2) { errorEl.textContent = 'Las contraseñas no coinciden.'; return; }
+                if (password !== password2) { errorEl.textContent = 'Las contrasenas no coinciden.'; return; }
                 const result = await registerUser(username, password);
                 if (result.ok) {
                     // Auto-login after registration
@@ -1425,8 +1443,8 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
-            if (password !== password2) return { ok: false, msg: 'Las contraseñas no coinciden.' };
+            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
+            if (password !== password2) return { ok: false, msg: 'Las contrasenas no coinciden.' };
             if (!rol || !['admin', 'usuario'].includes(rol)) rol = 'usuario';
 
             // Check if user already exists
@@ -1590,35 +1608,69 @@
                 selectedCourse: appState.selectedCourse,
                 aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || [],
-                dossierUrls: appState.dossierUrls || {}
+                dossierUrls: appState.dossierUrls || {},
+                lastModifiedBy: currentUser ? currentUser.username : 'unknown',
+                lastModifiedAt: new Date().toISOString()
             };
         }
 
+        // ================================================
+        // SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
+        // ================================================
+
+        // Calcula un hash simple para comparar datos y evitar re-renders innecesarios
+        function simpleDataHash(data) {
+            return JSON.stringify({
+                p: data.participation,
+                t: data.teachers,
+                s: data.selectedCourse,
+                a: data.aytoProjects,
+                c: data.coursesList,
+                d: data.dossierUrls
+            });
+        }
+
+        // Guarda los datos actuales en Firebase (escritura directa)
         async function saveToFirebase() {
-            if (isLoadingFromCloud) { showNotification('Espera a que termine la operación actual', 'info'); return; }
+            if (!isAdminUser()) return;
             try {
-                showNotification('Guardando en Firebase...', 'info');
+                isLocalSave = true;
+                updateSyncIndicator('syncing');
                 const data = getAppDataForFirebase();
-                const timestamp = new Date().toISOString();
-                
-                // Save current data
                 await db.ref(`${FIREBASE_PATH}/datos`).set(data);
-                
-                // Save a history entry
-                const historyKey = timestamp.replace(/[:.]/g, '-');
-                await db.ref(`${FIREBASE_PATH}/historial/${historyKey}`).set({
-                    ...data,
-                    savedAt: timestamp,
-                    savedAtLocal: new Date().toLocaleString('es-ES')
-                });
-                
-                saveLastUpdate('firebase');
+
+                // Guardar entrada en historial (solo si no es auto-guardado excesivo)
+                const now = Date.now();
+                if (!lastAutoSaveTime || (now - lastAutoSaveTime > 2 * 60 * 1000)) {
+                    const timestamp = new Date().toISOString();
+                    const historyKey = timestamp.replace(/[:.]/g, '-');
+                    await db.ref(`${FIREBASE_PATH}/historial/${historyKey}`).set({
+                        ...data,
+                        savedAt: timestamp,
+                        savedAtLocal: new Date().toLocaleString('es-ES')
+                    });
+                }
+
                 lastAutoSaveTime = Date.now();
-                showNotification('Datos guardados en Firebase correctamente');
+                saveLastUpdate('firebase');
+                updateSyncIndicator('synced');
             } catch (e) {
                 console.error('Error al guardar en Firebase:', e);
-                showNotification('Error al guardar en Firebase: ' + e.message, 'error');
+                updateSyncIndicator('sync-error');
+                showNotification('Error al sincronizar con Firebase: ' + e.message, 'error');
             }
+        }
+
+        // Escritura debounced: cuando el usuario hace cambios locales, espera SYNC_DEBOUNCE_MS
+        // antes de enviar a Firebase (evita spam de escrituras)
+        function debouncedSaveToFirebase() {
+            if (!isAdminUser()) return;
+            if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+            updateSyncIndicator('syncing');
+            syncDebounceTimer = setTimeout(() => {
+                syncDebounceTimer = null;
+                saveToFirebase();
+            }, SYNC_DEBOUNCE_MS);
         }
 
         // Función compartida para aplicar datos de Firebase al estado de la app
@@ -1642,8 +1694,93 @@
             saveLastUpdate('firebase');
         }
 
+        // Listener en tiempo real: se dispara cuando los datos cambian en Firebase
+        // (tanto por nosotros como por otros clientes)
+        function startRealtimeSync() {
+            if (firebaseDataListener) return; // Ya está escuchando
+
+            const dataRef = db.ref(`${FIREBASE_PATH}/datos`);
+            firebaseDataListener = dataRef.on('value', function(snapshot) {
+                if (!snapshot.exists()) {
+                    // No hay datos en Firebase todavía; subir los locales
+                    if (isAdminUser()) {
+                        debouncedSaveToFirebase();
+                    }
+                    updateSyncIndicator('synced');
+                    return;
+                }
+
+                const data = snapshot.val();
+
+                // Calcular hash de los datos remotos
+                const remoteHash = simpleDataHash(data);
+
+                if (isLocalSave) {
+                    // Los datos cambiaron porque NOSOTROS escribimos: actualizar hash y continuar
+                    lastRemoteDataHash = remoteHash;
+                    isLocalSave = false;
+                    updateSyncIndicator('synced');
+                    return;
+                }
+
+                // Los datos cambiaron por OTRO cliente: verificar si realmente cambiaron
+                if (remoteHash === lastRemoteDataHash) {
+                    return; // Mismos datos, no hacer nada
+                }
+
+                // Datos diferentes — aplicar al estado local
+                console.log('Datos actualizados desde otro cliente, re-renderizando...');
+                lastRemoteDataHash = remoteHash;
+                applyFirebaseData(data);
+                updateSyncIndicator('synced');
+                showNotification('Datos actualizados desde otro dispositivo', 'info');
+            }, function(error) {
+                console.error('Error en listener en tiempo real:', error);
+                updateSyncIndicator('sync-error');
+            });
+
+            console.log('Sincronización en tiempo real activada con Firebase');
+        }
+
+        // Detener el listener en tiempo real
+        function stopRealtimeSync() {
+            if (firebaseDataListener) {
+                db.ref(`${FIREBASE_PATH}/datos`).off('value', firebaseDataListener);
+                firebaseDataListener = null;
+                console.log('Sincronización en tiempo real desactivada');
+            }
+        }
+
+        // Carga inicial desde Firebase (una vez, al arrancar)
+        async function loadInitialData() {
+            blockInterface('Conectando con Firebase...');
+            try {
+                const snapshot = await db.ref(`${FIREBASE_PATH}/datos`).once('value');
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.participation !== undefined && data.teachers !== undefined) {
+                        lastRemoteDataHash = simpleDataHash(data);
+                        applyFirebaseData(data);
+                        showNotification('Datos sincronizados desde Firebase');
+                    }
+                } else {
+                    showNotification('No hay datos en Firebase. Se sincronizarán los datos locales.', 'info');
+                }
+                updateFirebaseStatus(true);
+                updateSyncIndicator('synced');
+            } catch (e) {
+                console.error('Error al cargar datos iniciales:', e);
+                updateFirebaseStatus(false);
+                updateSyncIndicator('sync-error');
+                showNotification('Error de conexión con Firebase: ' + e.message, 'error');
+            } finally {
+                unblockInterface();
+            }
+        }
+
+        // Carga manual desde Firebase (botón del usuario)
         async function loadFromFirebase() {
-            if (isLoadingFromCloud) { showNotification('Ya se está cargando...', 'info'); return; }
+            if (isLoadingFromCloud) { showNotification('Espera a que termine la operación actual', 'info'); return; }
             blockInterface('Cargando datos desde Firebase...');
             try {
                 showNotification('Cargando desde Firebase...', 'info');
@@ -1655,52 +1792,79 @@
                 }
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
+                    lastRemoteDataHash = simpleDataHash(data);
                     applyFirebaseData(data);
                     showNotification('Datos cargados desde Firebase correctamente');
+                    updateSyncIndicator('synced');
                 } else {
                     showNotification('Formato de datos incorrecto en Firebase.', 'error');
                 }
             } catch (e) {
                 console.error('Error al cargar desde Firebase:', e);
                 showNotification('Error al cargar desde Firebase: ' + e.message, 'error');
+                updateSyncIndicator('sync-error');
             } finally {
                 unblockInterface();
             }
         }
 
+        // Antigua función de carga auto (ahora reemplazada por loadInitialData)
         async function loadLatestFromFirebaseAuto() {
-            if (isLoadingFromCloud) return;
-            blockInterface('Buscando última versión en Firebase...');
-            try {
-                const snapshot = await db.ref(`${FIREBASE_PATH}/datos`).once('value');
-                if (!snapshot.exists()) {
-                    showNotification('No hay datos en Firebase. Usando datos locales.', 'info');
-                    updateFirebaseStatus(true);
-                    return false;
-                }
-                const data = snapshot.val();
-                if (data.participation !== undefined && data.teachers !== undefined) {
-                    applyFirebaseData(data);
-                    showNotification('Datos cargados desde Firebase correctamente');
-                    updateFirebaseStatus(true);
-                    return true;
-                }
-            } catch (e) {
-                console.error('Error en carga automática Firebase:', e);
-                showNotification('Error al cargar desde Firebase: ' + e.message, 'error');
-                updateFirebaseStatus(false);
-            } finally {
-                unblockInterface();
-            }
-            return false;
+            await loadInitialData();
         }
 
+        // --- Indicador visual de sincronización ---
+        function updateSyncIndicator(status) {
+            const indicator = document.getElementById('last-update-indicator');
+            const textEl = document.getElementById('last-update-text');
+            if (!indicator || !textEl) return;
+
+            // Quitar clases previas
+            indicator.classList.remove('syncing', 'synced', 'sync-error');
+
+            switch (status) {
+                case 'syncing':
+                    indicator.classList.add('syncing');
+                    indicator.classList.remove('hidden');
+                    textEl.innerHTML = '<span class="sync-pulse blue"></span> Sincronizando...';
+                    // Auto-ocultar después de 10s si no cambia estado
+                    setTimeout(() => {
+                        if (indicator.classList.contains('syncing')) {
+                            updateSyncIndicator('synced');
+                        }
+                    }, 10000);
+                    break;
+                case 'synced':
+                    indicator.classList.add('synced');
+                    indicator.classList.remove('hidden');
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    textEl.innerHTML = '<span class="sync-pulse green"></span> Sincronizado ' + timeStr;
+                    // Auto-ocultar después de 8s
+                    setTimeout(() => indicator.classList.add('fade-out'), 8000);
+                    setTimeout(() => { indicator.classList.remove('fade-out'); }, 8300);
+                    break;
+                case 'sync-error':
+                    indicator.classList.add('sync-error');
+                    indicator.classList.remove('hidden');
+                    textEl.innerHTML = '<span class="sync-pulse red"></span> Error de sincronización';
+                    break;
+            }
+        }
+
+        // --- Auto-save legacy (se mantiene como fallback, pero el principal es realtime) ---
         function startAutoSave() {
+            // El auto-save periódico ya no es necesario con la sincronización en tiempo real.
+            // Se mantiene un intervalo largo como seguridad por si el listener se desconecta.
             if (autoSaveInterval) clearInterval(autoSaveInterval);
             if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-            console.log('Guardado automático activado en Firebase (cada 5 minutos)');
-            autoSaveTimeout = setTimeout(() => autoSaveFirebase(), 30000);
-            autoSaveInterval = setInterval(autoSaveFirebase, 5 * 60 * 1000);
+            console.log('Sincronización en tiempo real activada (Firebase onValue)');
+            // Safety net: cada 10 minutos, forzar un save si hay cambios pendientes
+            autoSaveInterval = setInterval(function() {
+                if (isAdminUser() && !syncDebounceTimer) {
+                    saveToFirebase();
+                }
+            }, 10 * 60 * 1000);
         }
 
         function stopAutoSave() {
@@ -1708,30 +1872,9 @@
             if (autoSaveTimeout) { clearTimeout(autoSaveTimeout); autoSaveTimeout = null; }
         }
 
+        // autoSaveFirebase ya no se usa directamente — saveToFirebase() es la función principal
         async function autoSaveFirebase() {
-            if (!isAdminUser()) return;
-            if (getActiveTeachers().length === 0 && Object.keys(getActiveParticipation()).length === 0) return;
-            if (lastAutoSaveTime && (Date.now() - lastAutoSaveTime < 2 * 60 * 1000)) return;
-            try {
-                const data = getAppDataForFirebase();
-                const timestamp = new Date().toISOString();
-                await db.ref(`${FIREBASE_PATH}/datos`).set(data);
-                
-                // Save history entry
-                const historyKey = timestamp.replace(/[:.]/g, '-');
-                await db.ref(`${FIREBASE_PATH}/historial/${historyKey}`).set({
-                    ...data,
-                    savedAt: timestamp,
-                    savedAtLocal: new Date().toLocaleString('es-ES'),
-                    autoSaved: true
-                });
-                
-                lastAutoSaveTime = Date.now();
-                saveLastUpdate('firebase');
-                console.log('Auto-guardado en Firebase completado');
-            } catch (e) {
-                console.error('Auto-guardado Firebase falló:', e);
-            }
+            await saveToFirebase();
         }
 
         async function viewFirebaseBackups() {
@@ -1933,6 +2076,8 @@
 
         function saveData() {
             localStorage.setItem('programsAppData', JSON.stringify(appState));
+            // Sincronizar con Firebase automáticamente (debounced, solo admin)
+            debouncedSaveToFirebase();
         }
 
         function syncAytoCourse() {
@@ -3395,7 +3540,11 @@
                 // App already running, just reload data from Firebase
                 try {
                     updateFirebaseStatus(true);
-                    await loadLatestFromFirebaseAuto();
+                    await loadInitialData();
+                    // Re-activar sincronización en tiempo real (se detuvo al hacer logout)
+                    if (!firebaseDataListener) {
+                        startRealtimeSync();
+                    }
                 } catch (e) {
                     console.error('Error al recargar Firebase:', e);
                     updateFirebaseStatus(false);
@@ -3415,14 +3564,18 @@
             initAytoTab();
             initAuthEvents();
 
-            // Conectar a Firebase y cargar datos automáticamente
+            // Conectar a Firebase: cargar datos iniciales y activar sincronización en tiempo real
             try {
                 updateFirebaseStatus(true);
                 startAutoSave();
-                await loadLatestFromFirebaseAuto();
+                // 1) Carga inicial (una vez)
+                await loadInitialData();
+                // 2) Activar listener en tiempo real DESPUÉS de la carga inicial
+                startRealtimeSync();
             } catch (e) {
                 console.error('Error al inicializar Firebase:', e);
                 updateFirebaseStatus(false);
+                updateSyncIndicator('sync-error');
             }
 
             // Mostrar última actualización si existe
