@@ -321,6 +321,21 @@
 
         /* ----- ESTILOS DE GESTIÓN DE CURSOS ACADÉMICOS ----- */
         .courses-manager { margin-bottom: 15px; }
+
+        /* 8 paletas de color para cursos académicos (rotación cíclica) */
+        .course-item.cp-0 { --cp: #0055a4; --cp-bg: rgba(0,85,164,0.07); --cp-badge: #0055a4; }
+        .course-item.cp-1 { --cp: #009246; --cp-bg: rgba(0,146,70,0.07); --cp-badge: #009246; }
+        .course-item.cp-2 { --cp: #e65100; --cp-bg: rgba(230,81,0,0.07); --cp-badge: #e65100; }
+        .course-item.cp-3 { --cp: #9c27b0; --cp-bg: rgba(156,39,176,0.07); --cp-badge: #9c27b0; }
+        .course-item.cp-4 { --cp: #c62828; --cp-bg: rgba(198,40,40,0.07); --cp-badge: #c62828; }
+        .course-item.cp-5 { --cp: #00838f; --cp-bg: rgba(0,131,143,0.07); --cp-badge: #00838f; }
+        .course-item.cp-6 { --cp: #6a1b9a; --cp-bg: rgba(106,27,154,0.07); --cp-badge: #6a1b9a; }
+        .course-item.cp-7 { --cp: #2e7d32; --cp-bg: rgba(46,125,50,0.07); --cp-badge: #2e7d32; }
+        .course-item.active { border-color: var(--cp); background: var(--cp-bg); }
+        .course-item.active .course-radio { border-color: var(--cp); }
+        .course-item.active .course-radio::after { background: var(--cp); }
+        .course-item.active .course-label { color: var(--cp); }
+        .course-item .course-badge { background: var(--cp-badge); }
         .courses-list {
             display: flex; flex-direction: column; gap: 6px;
             max-height: 220px; overflow-y: auto;
@@ -334,31 +349,19 @@
             transition: var(--transition); cursor: pointer;
         }
         .course-item:hover { border-color: #ccc; }
-        .course-item.active {
-            border-color: var(--primary);
-            background: rgba(0, 85, 164, 0.06);
-        }
         .course-item .course-radio {
             width: 18px; height: 18px; border-radius: 50%;
             border: 2px solid #bbb; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             transition: var(--transition);
         }
-        .course-item.active .course-radio {
-            border-color: var(--primary);
-        }
-        .course-item.active .course-radio::after {
-            content: ''; width: 10px; height: 10px;
-            border-radius: 50%; background: var(--primary);
-        }
         .course-item .course-label {
             flex: 1; font-weight: 600; font-size: 0.95rem; color: var(--dark);
         }
-        .course-item.active .course-label { color: var(--primary); }
         .course-item .course-badge {
             font-size: 0.7rem; padding: 2px 8px; border-radius: 10px;
             font-weight: 700; text-transform: uppercase;
-            background: var(--secondary); color: white; flex-shrink: 0;
+            color: white; flex-shrink: 0;
         }
         .course-item .btn-group { display: flex; gap: 3px; flex-shrink: 0; }
         .course-item .btn-sm {
@@ -2367,8 +2370,9 @@
 
             courses.forEach((course, index) => {
                 const isActive = course === appState.selectedCourse;
+                const colorIndex = index % 8;
                 const item = document.createElement('div');
-                item.className = `course-item ${isActive ? 'active' : ''}`;
+                item.className = `course-item cp-${colorIndex} ${isActive ? 'active' : ''}`;
                 item.innerHTML = `
                     <div class="course-radio"></div>
                     <span class="course-label">Curso ${course}</span>
