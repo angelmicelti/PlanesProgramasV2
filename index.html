@@ -561,7 +561,7 @@
                     <i class="fas fa-graduation-cap"></i>
                     <div>
                         <h1>Programas Educativos (IES Virgen de Villadiego)</h1>
-                        <h2>Versión Equipo Directivo</h2>
+                        <h2 id="header-version-label">Versión Equipo Directivo</h2>
                         <div class="logo-subtitle">Consejería de Desarrollo Educativo y Formación Profesional - Junta de Andalucía</div>
                         <div id="course-subtitle" class="course-subtitle">Curso 2025-2026</div>
                     </div>
@@ -632,7 +632,7 @@
                         </div>
                     </div>
                     
-                    <div class="form-group" id="dossier-url-group">
+                    <div class="form-group admin-only" id="dossier-url-group">
                         <label for="dossier-url-input"><i class="fas fa-link"></i> URL del Dossier para el curso <span id="dossier-url-course-label" style="color: var(--primary);"></span>:</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <input type="url" id="dossier-url-input" class="form-control" placeholder="https://ejemplo.com/dossier_2025-2026.pdf" style="flex: 1;">
@@ -1211,6 +1211,9 @@
 
             // Disable autosave for non-admin
             if (!isAdmin) stopAutoSave();
+
+            // Actualizar texto del banner según rol
+            updateHeaderStyle();
         }
 
         function setUserLoggedOut() {
@@ -1235,6 +1238,11 @@
             stopRealtimeSync();
             // Cancel any pending debounced save
             if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
+            // Reset remote hash to avoid stale-data skips on next login
+            lastRemoteDataHash = '';
+            // Reset header to default gradient
+            const header = document.querySelector('header');
+            if (header) header.style.background = '';
         }
 
         async function checkExistingSession() {
@@ -1417,27 +1425,44 @@
             Object.entries(users).forEach(([username, data]) => {
                 const isSelf = username === currentUser.username;
                 const tr = document.createElement('tr');
-                const dateStr = data.fechaRegistroLocal || new Date(data.fechaRegistro).toLocaleString('es-ES');
+                const dateStr = data.fechaRegistroLocal || (data.fechaRegistro ? new Date(data.fechaRegistro).toLocaleString('es-ES') : 'N/A');
                 const safeUsername = escapeHtml(username);
                 const safeRol = escapeHtml(data.rol || 'usuario');
                 tr.innerHTML = `
                     <td><strong>${safeUsername}</strong> ${isSelf ? '<span style="color:var(--gray);font-size:0.75rem;">(tu)</span>' : ''}</td>
                     <td><span class="role-badge ${safeRol}">${safeRol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
-                    <td style="font-size:0.8rem; color:var(--gray);">${dateStr}</td>
+                    <td style="font-size:0.8rem; color:var(--gray);">${escapeHtml(dateStr)}</td>
                     <td>
                         ${!isSelf && !(safeUsername === 'usuario') ? `
                             <button class="action-btn-sm" style="background:${data.rol === 'admin' ? '#e9ecef' : 'var(--accent)'}; color:${data.rol === 'admin' ? 'var(--dark)' : 'white'};"
-                                onclick="toggleUserRole('${safeUsername}', '${data.rol === 'admin' ? 'usuario' : 'admin'}'); loadUsersAdminModal();">
+                                data-username="${safeUsername}" data-target-role="${data.rol === 'admin' ? 'usuario' : 'admin'}">
                                 ${data.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}
                             </button>
-                            <button class="action-btn-sm" style="background:var(--danger); color:white; margin-left:4px;"
-                                onclick="if(confirm('Seguro que deseas eliminar al usuario ${safeUsername}?')){deleteUserAccount('${safeUsername}').then(()=>loadUsersAdminModal());}">
+                            <button class="action-btn-sm btn-delete-user" style="background:var(--danger); color:white; margin-left:4px;"
+                                data-username="${safeUsername}">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         ` : '<span style="color:var(--gray);font-size:0.8rem;">--</span>'}
                     </td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            // Event delegation para botones de acción (evita onclick inline y XSS)
+            tbody.querySelectorAll('[data-username][data-target-role]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const u = this.getAttribute('data-username');
+                    const r = this.getAttribute('data-target-role');
+                    toggleUserRole(u, r).then(() => loadUsersAdminModal());
+                });
+            });
+            tbody.querySelectorAll('.btn-delete-user').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const u = this.getAttribute('data-username');
+                    if (confirm('Seguro que deseas eliminar al usuario ' + u + '?')) {
+                        deleteUserAccount(u).then(() => loadUsersAdminModal());
+                    }
+                });
             });
         }
 
@@ -1506,16 +1531,20 @@
         // FUNCIONES UTILITARIAS (fin)
         // ================================================
 
+        let notificationTimer = null;
         function showNotification(msg, type = 'success') {
             if (isLoadingFromCloud && type !== 'error') return;
             const area = document.getElementById('notification-area');
             const msgEl = document.getElementById('notification-msg');
+            // Limpiar timer previo para evitar ocultar prematuramente
+            if (notificationTimer) { clearTimeout(notificationTimer); notificationTimer = null; }
             msgEl.textContent = msg;
             msgEl.className = `notification ${type}`;
             area.classList.remove('hidden');
-            setTimeout(() => area.classList.add('hidden'), 4000);
+            notificationTimer = setTimeout(() => { notificationTimer = null; area.classList.add('hidden'); }, 4000);
         }
 
+        let blockSafetyTimer = null;
         function blockInterface(message = 'Cargando datos desde Firebase...') {
             const blocker = document.getElementById('interface-blocker');
             document.getElementById('loading-message').textContent = message;
@@ -1524,12 +1553,21 @@
             document.querySelectorAll('button, input, select, .nav-btn, .back-btn').forEach(el => {
                 if (el) { el.disabled = true; el.style.pointerEvents = 'none'; el.style.opacity = '0.6'; }
             });
+            // Timeout de seguridad: desbloquear tras 30s si no se llama a unblockInterface
+            if (blockSafetyTimer) clearTimeout(blockSafetyTimer);
+            blockSafetyTimer = setTimeout(() => {
+                console.warn('blockInterface: timeout de seguridad (30s). Desbloqueando...');
+                unblockInterface();
+                showNotification('La operación está tardando demasiado. Inténtelo de nuevo.', 'error');
+            }, 30000);
         }
 
         function unblockInterface() {
             const blocker = document.getElementById('interface-blocker');
             blocker.style.display = 'none';
             isLoadingFromCloud = false;
+            // Cancelar timeout de seguridad
+            if (blockSafetyTimer) { clearTimeout(blockSafetyTimer); blockSafetyTimer = null; }
             document.querySelectorAll('button, input, select, .nav-btn, .back-btn').forEach(el => {
                 if (el) { el.disabled = false; el.style.pointerEvents = ''; el.style.opacity = ''; }
             });
@@ -1684,8 +1722,11 @@
             appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
             ensureActiveCourseData();
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
-            if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
-            if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
+            if (Array.isArray(data.coursesList)) appState.coursesList = data.coursesList;
+            appState.dossierUrls = (data.dossierUrls && typeof data.dossierUrls === 'object') ? { ...data.dossierUrls } : {};
+            // Forzar la URL del dossier para cursos bloqueados (no se puede alterar ni en Firebase)
+            if (!appState.dossierUrls) appState.dossierUrls = {};
+            appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
@@ -1817,25 +1858,29 @@
         }
 
         // --- Indicador visual de sincronización ---
+        let syncIndicatorTimers = [];
         function updateSyncIndicator(status) {
             const indicator = document.getElementById('last-update-indicator');
             const textEl = document.getElementById('last-update-text');
             if (!indicator || !textEl) return;
 
+            // Limpiar timers previos
+            syncIndicatorTimers.forEach(t => clearTimeout(t));
+            syncIndicatorTimers = [];
+
             // Quitar clases previas
-            indicator.classList.remove('syncing', 'synced', 'sync-error');
+            indicator.classList.remove('syncing', 'synced', 'sync-error', 'fade-out');
 
             switch (status) {
                 case 'syncing':
                     indicator.classList.add('syncing');
                     indicator.classList.remove('hidden');
                     textEl.innerHTML = '<span class="sync-pulse blue"></span> Sincronizando...';
-                    // Auto-ocultar después de 10s si no cambia estado
-                    setTimeout(() => {
+                    syncIndicatorTimers.push(setTimeout(() => {
                         if (indicator.classList.contains('syncing')) {
                             updateSyncIndicator('synced');
                         }
-                    }, 10000);
+                    }, 10000));
                     break;
                 case 'synced':
                     indicator.classList.add('synced');
@@ -1843,9 +1888,8 @@
                     const now = new Date();
                     const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                     textEl.innerHTML = '<span class="sync-pulse green"></span> Sincronizado ' + timeStr;
-                    // Auto-ocultar después de 8s
-                    setTimeout(() => indicator.classList.add('fade-out'), 8000);
-                    setTimeout(() => { indicator.classList.remove('fade-out'); }, 8300);
+                    syncIndicatorTimers.push(setTimeout(() => indicator.classList.add('fade-out'), 8000));
+                    syncIndicatorTimers.push(setTimeout(() => indicator.classList.remove('fade-out'), 8300));
                     break;
                 case 'sync-error':
                     indicator.classList.add('sync-error');
@@ -1937,6 +1981,7 @@
                 if (!snapshot.exists()) throw new Error('Copia no encontrada');
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
+                    lastRemoteDataHash = simpleDataHash(data);
                     applyFirebaseData(data);
                     showNotification('Copia restaurada correctamente');
                 } else throw new Error('Formato incorrecto.');
@@ -2089,24 +2134,76 @@
             const selected = appState.selectedCourse || getCurrentCourse();
             if (aytoCourseEl) aytoCourseEl.textContent = selected.replace(/-/g, '/');
             if (aytoFooterCourseEl) aytoFooterCourseEl.textContent = selected.replace(/-/g, '/');
+            updateHeaderStyle();
+        }
+
+        // ================================================
+        // PALETAS DE COLOR PARA CURSOS Y BANNER
+        // ================================================
+
+        const COURSE_COLORS = [
+            { main: '#0055a4', secondary: '#003d7a' },   // 0 - Azul institucional
+            { main: '#009246', secondary: '#006b34' },   // 1 - Verde
+            { main: '#e65100', secondary: '#bf360c' },   // 2 - Naranja
+            { main: '#9c27b0', secondary: '#7b1fa2' },   // 3 - Púrpura
+            { main: '#c62828', secondary: '#8e0000' },   // 4 - Rojo
+            { main: '#00838f', secondary: '#005662' },   // 5 - Turquesa
+            { main: '#6a1b9a', secondary: '#4a148c' },   // 6 - Violeta
+            { main: '#2e7d32', secondary: '#1b5e20' }    // 7 - Verde bosque
+        ];
+
+        function getCourseColorIndex(course, coursesList) {
+            const idx = (coursesList || []).indexOf(course);
+            return idx >= 0 ? idx % 8 : 0;
+        }
+
+        function updateHeaderStyle() {
+            const header = document.querySelector('header');
+            const versionLabel = document.getElementById('header-version-label');
+            const selected = appState.selectedCourse || getCurrentCourse();
+            const colorIdx = getCourseColorIndex(selected, appState.coursesList);
+            const palette = COURSE_COLORS[colorIdx];
+
+            // Cambiar gradiente del banner según el color del curso
+            if (header) {
+                header.style.background = `linear-gradient(135deg, ${palette.main}, ${palette.secondary})`;
+            }
+            // Actualizar texto según rol
+            if (versionLabel) {
+                versionLabel.textContent = isAdminUser() ? 'Versión Equipo Directivo' : 'Modo Solo Lectura';
+            }
         }
 
         // ================================================
         // GESTIÓN DE URL DEL DOSSIER POR CURSO
         // ================================================
 
+        // Curso cuyo dossier tiene URL fija y no se puede editar
+        const LOCKED_DOSSIER_COURSE = '2025-2026';
+
+        function isDossierLocked(course) {
+            return course === LOCKED_DOSSIER_COURSE;
+        }
+
         function updateDossierButton() {
             const dossierBtn = document.getElementById('dossier-btn');
             const dossierCourseEl = document.getElementById('dossier-course');
             const dossierUrlInput = document.getElementById('dossier-url-input');
             const dossierUrlLabel = document.getElementById('dossier-url-course-label');
+            const saveBtn = document.getElementById('save-dossier-url-btn');
             const selected = appState.selectedCourse || getCurrentCourse();
+            const locked = isDossierLocked(selected);
 
             // Actualizar texto del curso en el botón
             if (dossierCourseEl) dossierCourseEl.textContent = selected;
 
             // Actualizar label del input de configuración
-            if (dossierUrlLabel) dossierUrlLabel.textContent = selected;
+            if (dossierUrlLabel) {
+                dossierUrlLabel.textContent = selected;
+                if (locked) {
+                    dossierUrlLabel.innerHTML = selected + ' <i class="fas fa-lock" style="color: var(--danger); font-size: 0.8em;" title="URL fija, no modificable"></i>';
+                }
+            }
 
             // Obtener URL personalizada para este curso (si existe)
             const customUrl = (appState.dossierUrls && appState.dossierUrls[selected]) || '';
@@ -2116,14 +2213,32 @@
             if (dossierBtn) dossierBtn.href = finalUrl;
 
             // Actualizar el input de configuración
-            if (dossierUrlInput) dossierUrlInput.value = customUrl;
+            if (dossierUrlInput) {
+                dossierUrlInput.value = customUrl;
+                dossierUrlInput.readOnly = locked;
+                dossierUrlInput.style.opacity = locked ? '0.6' : '1';
+                dossierUrlInput.style.cursor = locked ? 'not-allowed' : 'auto';
+            }
+            // Bloquear/desbloquear botón de guardar
+            if (saveBtn) {
+                saveBtn.disabled = locked;
+                saveBtn.style.opacity = locked ? '0.5' : '1';
+                saveBtn.style.cursor = locked ? 'not-allowed' : 'pointer';
+            }
         }
 
         function saveDossierUrl() {
             const input = document.getElementById('dossier-url-input');
             if (!input) return;
-            const url = input.value.trim();
             const selected = appState.selectedCourse || getCurrentCourse();
+
+            // Bloquear edición para el curso con URL fija
+            if (isDossierLocked(selected)) {
+                showNotification('La URL del dossier de este curso es fija y no se puede modificar.', 'error');
+                return;
+            }
+
+            const url = input.value.trim();
 
             if (!appState.dossierUrls) appState.dossierUrls = {};
 
@@ -2172,9 +2287,9 @@
                         <div class="program-header">
                             <div>
                                 <div class="program-name">${program.name}</div>
-                                <a href="${program.url}" target="_blank" class="program-link">
+                                ${program.url ? `<a href="${program.url}" target="_blank" class="program-link">
                                     <i class="fas fa-external-link-alt"></i> Más información
-                                </a>
+                                </a>` : ''}
                                 ${coordText}
                             </div>
                         </div>
@@ -2375,7 +2490,7 @@
                 item.className = `course-item cp-${colorIndex} ${isActive ? 'active' : ''}`;
                 item.innerHTML = `
                     <div class="course-radio"></div>
-                    <span class="course-label">Curso ${course}</span>
+                    <span class="course-label">Curso ${escapeHtml(course)}</span>
                     ${isActive ? '<span class="course-badge">Activo</span>' : ''}
                     ${admin ? `<div class="btn-group">
                         <button class="btn-sm edit" data-index="${index}" title="Editar"><i class="fas fa-pen"></i></button>
@@ -2502,7 +2617,7 @@
             editRow.className = 'course-inline-edit';
             editRow.innerHTML = `
                 <span style="font-weight: 600; flex-shrink: 0; color: var(--gray);">Curso</span>
-                <input type="text" value="${currentCourse}" placeholder="Ej: 2030-2031" maxlength="9">
+                <input type="text" value="${escapeHtml(currentCourse)}" placeholder="Ej: 2030-2031" maxlength="9">
                 <button class="btn-sm save" title="Guardar"><i class="fas fa-check"></i></button>
                 <button class="btn-sm cancel" title="Cancelar"><i class="fas fa-times"></i></button>
             `;
@@ -2551,6 +2666,24 @@
             }
 
             const oldCourse = appState.coursesList[index];
+            if (oldCourse === value) return; // Sin cambios
+            // Migrar datos del curso antiguo al nuevo nombre en todos los objetos
+            ['participation', 'teachers', 'aytoProjects'].forEach(key => {
+                if (appState[key] && appState[key][oldCourse] !== undefined) {
+                    appState[key][value] = appState[key][oldCourse];
+                    delete appState[key][oldCourse];
+                }
+            });
+            // Migrar dossier URL
+            if (appState.dossierUrls && appState.dossierUrls[oldCourse] !== undefined) {
+                appState.dossierUrls[value] = appState.dossierUrls[oldCourse];
+                delete appState.dossierUrls[oldCourse];
+            }
+            // Forzar URL bloqueada si aplica
+            if (value === LOCKED_DOSSIER_COURSE) {
+                if (!appState.dossierUrls) appState.dossierUrls = {};
+                appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
+            }
             appState.coursesList[index] = value;
             // Ordenar cronológicamente
             appState.coursesList.sort();
@@ -2577,6 +2710,11 @@
             if (!confirm(`¿Eliminar el curso ${course}?${isActive ? '\n\nEste es el curso ACTIVO. Se activará otro automáticamente.' : ''}`)) return;
 
             appState.coursesList.splice(index, 1);
+            // Limpiar datos huérfanos del curso eliminado
+            ['participation', 'teachers', 'aytoProjects'].forEach(key => {
+                if (appState[key]) delete appState[key][course];
+            });
+            if (appState.dossierUrls) delete appState.dossierUrls[course];
             // Si era el activo, seleccionar el primero
             if (isActive) {
                 appState.selectedCourse = appState.coursesList[0];
@@ -2834,7 +2972,7 @@
             const row = document.createElement('div');
             row.className = 'activity-row';
             row.innerHTML = `
-                <input type="text" placeholder="Describe una actividad..." value="${value.replace(/"/g, '&quot;')}">
+                <input type="text" placeholder="Describe una actividad..." value="${escapeHtml(value)}">
                 <button type="button" class="remove-activity" title="Eliminar"><i class="fas fa-times"></i></button>
             `;
             row.querySelector('.remove-activity').addEventListener('click', function() {
@@ -2935,39 +3073,28 @@
                 return;
             }
 
-            // Añadir al curso destino
+            // Añadir al curso destino y eliminar del origen
             appState.aytoProjects[targetCourse].push(projectToTransfer);
+            sourceProjects.splice(projectIndex, 1);
             saveData();
+            renderAytoProjects();
             showNotification(`Proyecto "${projectToTransfer.nombre}" transferido al curso ${targetCourse.replace('-', '/')}.`);
         }
 
         function normalizeName(name) {
-            const replacements = {
-                'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú', 'Ã±': 'ñ',
-                'Ã': 'Á', 'Ã‰': 'É', 'Ã': 'Í', 'Ã"' : 'Ó', 'Ãš': 'Ú', 'Ã‘': 'Ñ',
-                'Ã¼': 'ü', 'Ãœ': 'Ü', 'Ã§': 'ç', 'Ã‡': 'Ç',
-                'Â¿': '¿', 'Â¡': '¡', 'Â´': "'", 'Âª': 'ª', 'Âº': 'º',
-                'â‚¬': '€', 'â€': '"', 'â€œ': '"', 'â€�': '"', 'â€¦': '…'
-            };
-            let normalized = name;
-            Object.keys(replacements).forEach(badChar => {
-                const goodChar = replacements[badChar];
-                normalized = normalized.replace(new RegExp(badChar, 'g'), goodChar);
-            });
-            // Solo aplicar TextDecoder si se detectaron patrones mojibake (evita corromper UTF-8 correcto)
+            // TextDecoder Latin1->UTF-8 corrige mojibake de forma robusta
             if (typeof TextDecoder !== 'undefined') {
                 try {
-                    const bytes = new Uint8Array(normalized.length);
-                    for (let i = 0; i < normalized.length; i++) bytes[i] = normalized.charCodeAt(i);
+                    const bytes = new Uint8Array(name.length);
+                    for (let i = 0; i < name.length; i++) bytes[i] = name.charCodeAt(i);
                     const decoder = new TextDecoder('latin1');
                     const decoded = decoder.decode(bytes);
-                    // Solo usar si el resultado es diferente y no contiene caracteres de reemplazo
-                    if (decoded !== normalized && !/[\ufffd]/.test(decoded)) {
-                        normalized = decoded;
+                    if (decoded !== name && !/[\ufffd]/.test(decoded)) {
+                        name = decoded;
                     }
                 } catch (e) { /* ignorar */ }
             }
-            return normalized.trim();
+            return name.trim();
         }
 
         function handleTeacherFile(event) {
@@ -3204,7 +3331,15 @@
                 return;
             }
 
+            const oldName = teachers[index];
             teachers[index] = validation.name;
+            // Actualizar referencias de coordinador con el nombre antiguo
+            const participation = getActiveParticipation();
+            for (const progId in participation) {
+                if (participation[progId].coordinator === oldName) {
+                    participation[progId].coordinator = validation.name;
+                }
+            }
             // Reordenar
             teachers.sort((a, b) => {
                 const [apA, nomA] = a.split(',').map(s => s.trim().toLowerCase());
@@ -3229,8 +3364,16 @@
 
             const activeCourse = appState.selectedCourse || getCurrentCourse();
             appState.teachers[activeCourse].splice(index, 1);
+            // Limpiar referencias huérfanas de coordinador
+            const participation = getActiveParticipation();
+            for (const progId in participation) {
+                if (participation[progId].coordinator === teacher) {
+                    delete participation[progId].coordinator;
+                }
+            }
             saveData();
             updateTeacherSelectors();
+            initPrograms();
             showNotification(`Profesor/a "${teacher}" eliminado/a.`);
         }
 
@@ -3271,6 +3414,9 @@
                         coursesList: importedData.coursesList || [],
                         dossierUrls: importedData.dossierUrls || {}
                     };
+                    // Forzar URL del dossier bloqueada (no se puede alterar ni importando)
+                    if (!appState.dossierUrls) appState.dossierUrls = {};
+                    appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
                     // Asegurar datos para el curso activo
                     ensureActiveCourseData();
                     // Si no hay proyectos ayto importados, mantener los actuales
@@ -3308,6 +3454,10 @@
             const validationResult = validateCoordinatorAssignments();
             if (!validationResult.isValid) {
                 alert(`No se puede generar el PDF. Los siguientes programas tienen participación marcada pero no tienen coordinador asignado:\n\n- ${validationResult.errors.join('\n- ')}\n\nPor favor, asigne coordinadores a estos programas antes de generar el informe.`);
+                return;
+            }
+            if (!window.jspdf) {
+                showNotification('No se pudo cargar la librería de generación de PDF. Verifique su conexión a internet.', 'error');
                 return;
             }
             const { jsPDF } = window.jspdf;
@@ -3436,11 +3586,12 @@
                     reportData[type].forEach(item => {
                         const safeProgram = item.program.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
                         const safeCoordinator = item.coordinator.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                        const safeUrl = item.url ? item.url.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
                         htmlContent += `
                     <tr>
                         <td>
-                            ${item.url ? 
-                                `<a href="${item.url}" target="_blank" class="program-link">${safeProgram}</a>` : 
+                            ${safeUrl ? 
+                                `<a href="${safeUrl}" target="_blank" class="program-link">${safeProgram}</a>` : 
                                 safeProgram
                             }
                         </td>
@@ -3531,10 +3682,20 @@
             return { isValid: errors.length === 0, errors: errors };
         }
 
-        function clearAllData() {
-            if (confirm('¿ESTÁ SEGURO DE QUE QUIERE ELIMINAR TODOS LOS DATOS?\n\nEsta acción eliminará:\n- Lista completa de profesorado\n- Datos de planes y proyectos\n- Toda la configuración\n\nEsta operación NO se puede deshacer.')) {
-                localStorage.removeItem('programsAppData');
-                location.reload();
+        async function clearAllData() {
+            if (confirm('¿ESTÁ SEGURO DE QUE QUIERE ELIMINAR TODOS LOS DATOS?\n\nEsta acción eliminará:\n- Lista completa de profesorado\n- Datos de planes y proyectos\n- Toda la configuración\n- Datos de Firebase\n\nEsta operación NO se puede deshacer.')) {
+                try {
+                    blockInterface('Eliminando todos los datos...');
+                    // Borrar de Firebase primero (para que no se restaure al recargar)
+                    await db.ref(`${FIREBASE_PATH}/datos`).remove();
+                    await db.ref(`${FIREBASE_PATH}/historial`).remove();
+                    localStorage.removeItem('programsAppData');
+                    location.reload();
+                } catch (e) {
+                    console.error('Error al borrar datos de Firebase:', e);
+                    unblockInterface();
+                    showNotification('Error al borrar datos de Firebase: ' + e.message, 'error');
+                }
             }
         }
 
