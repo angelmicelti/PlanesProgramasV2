@@ -780,7 +780,7 @@
             <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento</h2>
             <div class="ayto-header">
                 <div class="container">
-                    <h1 class="ayto-title">Proyectos en colaboración con el <br> Área de Juventud del Ayuntamiento de Peñaflor</h1>
+                    <h1 class="ayto-title">Proyectos en colaboración con el Área de Juventud del Ayuntamiento de Peñaflor</h1>
                     <p class="ayto-subtitle">Curso <span id="ayto-course-subtitle">2025/2026</span></p>
                 </div>
             </div>
@@ -1683,9 +1683,6 @@
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
             if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
-            // Forzar la URL del dossier para cursos bloqueados (no se puede alterar ni en Firebase)
-            if (!appState.dossierUrls) appState.dossierUrls = {};
-            appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
@@ -2051,9 +2048,6 @@
                     };
                 } catch (e) { console.warn('Error al cargar datos guardados'); }
             }
-            // Forzar la URL del dossier para cursos bloqueados
-            if (!appState.dossierUrls) appState.dossierUrls = {};
-            appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
             // Asegurar datos para el curso activo
             ensureActiveCourseData();
             // Si no hay proyectos ayto, inicializar con los defaults para el curso seleccionado
@@ -2098,33 +2092,18 @@
         // GESTIÓN DE URL DEL DOSSIER POR CURSO
         // ================================================
 
-        // Curso cuyo dossier tiene URL fija y no se puede editar
-        const LOCKED_DOSSIER_COURSE = '2025-2026';
-
-        function isDossierLocked(course) {
-            return course === LOCKED_DOSSIER_COURSE;
-        }
-
         function updateDossierButton() {
             const dossierBtn = document.getElementById('dossier-btn');
             const dossierCourseEl = document.getElementById('dossier-course');
             const dossierUrlInput = document.getElementById('dossier-url-input');
             const dossierUrlLabel = document.getElementById('dossier-url-course-label');
-            const dossierUrlGroup = document.getElementById('dossier-url-group');
-            const saveBtn = document.getElementById('save-dossier-url-btn');
             const selected = appState.selectedCourse || getCurrentCourse();
-            const locked = isDossierLocked(selected);
 
             // Actualizar texto del curso en el botón
             if (dossierCourseEl) dossierCourseEl.textContent = selected;
 
             // Actualizar label del input de configuración
-            if (dossierUrlLabel) {
-                dossierUrlLabel.textContent = selected;
-                if (locked) {
-                    dossierUrlLabel.innerHTML = selected + ' <i class="fas fa-lock" style="color: var(--danger); font-size: 0.8em;" title="URL fija, no modificable"></i>';
-                }
-            }
+            if (dossierUrlLabel) dossierUrlLabel.textContent = selected;
 
             // Obtener URL personalizada para este curso (si existe)
             const customUrl = (appState.dossierUrls && appState.dossierUrls[selected]) || '';
@@ -2134,32 +2113,14 @@
             if (dossierBtn) dossierBtn.href = finalUrl;
 
             // Actualizar el input de configuración
-            if (dossierUrlInput) {
-                dossierUrlInput.value = customUrl;
-                dossierUrlInput.readOnly = locked;
-                dossierUrlInput.style.opacity = locked ? '0.6' : '1';
-                dossierUrlInput.style.cursor = locked ? 'not-allowed' : 'auto';
-            }
-            // Bloquear/desbloquear botón de guardar
-            if (saveBtn) {
-                saveBtn.disabled = locked;
-                saveBtn.style.opacity = locked ? '0.5' : '1';
-                saveBtn.style.cursor = locked ? 'not-allowed' : 'pointer';
-            }
+            if (dossierUrlInput) dossierUrlInput.value = customUrl;
         }
 
         function saveDossierUrl() {
             const input = document.getElementById('dossier-url-input');
             if (!input) return;
-            const selected = appState.selectedCourse || getCurrentCourse();
-
-            // Bloquear edición para el curso con URL fija
-            if (isDossierLocked(selected)) {
-                showNotification('La URL del dossier de este curso es fija y no se puede modificar.', 'error');
-                return;
-            }
-
             const url = input.value.trim();
+            const selected = appState.selectedCourse || getCurrentCourse();
 
             if (!appState.dossierUrls) appState.dossierUrls = {};
 
@@ -2191,6 +2152,10 @@
 
                 programsData[type].forEach(program => {
                     const participation = getActiveParticipation()[program.id] || { participates: false, coordinator: '' };
+
+                    // En modo solo lectura, ocultar planes sin coordinador asignado
+                    if (!admin && !participation.coordinator) return;
+
                     const programCard = document.createElement('div');
                     programCard.className = `program-card ${type === 'ayto-projects' ? 'type-ayto' : type}`;
 
@@ -3302,9 +3267,7 @@
                         coursesList: importedData.coursesList || [],
                         dossierUrls: importedData.dossierUrls || {}
                     };
-                    // Forzar la URL del dossier para cursos bloqueados
-                    if (!appState.dossierUrls) appState.dossierUrls = {};
-                    appState.dossierUrls[LOCKED_DOSSIER_COURSE] = DEFAULT_DOSSIER_URL;
+                    // Asegurar datos para el curso activo
                     ensureActiveCourseData();
                     // Si no hay proyectos ayto importados, mantener los actuales
                     const importedCourse = appState.selectedCourse;
