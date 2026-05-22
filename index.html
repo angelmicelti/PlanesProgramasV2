@@ -505,8 +505,8 @@
                     <input type="text" id="login-username" class="form-control" placeholder="Introduce tu usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">Contrasena</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contrasena" autocomplete="current-password">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Introduce tu contraseña" autocomplete="current-password">
                 </div>
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
@@ -520,12 +520,12 @@
                     <input type="text" id="register-username" class="form-control" placeholder="Elige un nombre de usuario" autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="register-password">Contrasena</label>
-                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contrasena" autocomplete="new-password">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" class="form-control" placeholder="Elige una contraseña" autocomplete="new-password">
                 </div>
                 <div class="form-group">
-                    <label for="register-password2">Confirmar Contrasena</label>
-                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contrasena" autocomplete="new-password">
+                    <label for="register-password2">Confirmar Contraseña</label>
+                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contraseña" autocomplete="new-password">
                 </div>
                 <button id="register-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
                 <div class="login-error" id="register-error"></div>
@@ -916,12 +916,12 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="admin-new-password" style="font-size: 0.85rem;">Contrasena</label>
-                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <label for="admin-new-password" style="font-size: 0.85rem;">Contraseña</label>
+                            <input type="password" id="admin-new-password" class="form-control" placeholder="Contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="admin-new-password2" style="font-size: 0.85rem;">Confirmar</label>
-                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contrasena" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
+                            <input type="password" id="admin-new-password2" class="form-control" placeholder="Repetir contraseña" autocomplete="new-password" style="font-size: 0.9rem; padding: 8px 10px;">
                         </div>
                     </div>
                     <div id="admin-add-user-error" style="color: var(--danger); font-size: 0.8rem; margin-top: 8px; min-height: 18px;"></div>
@@ -1129,7 +1129,7 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
+            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
 
             // Check if user already exists
             const snapshot = await db.ref('usuarios').once('value');
@@ -1153,14 +1153,14 @@
 
         async function loginUser(username, password) {
             username = username.trim().toLowerCase();
-            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contrasena.' };
+            if (!username || !password) return { ok: false, msg: 'Introduce usuario y contraseña.' };
 
             const snapshot = await db.ref(`usuarios/${username}`).once('value');
             const userData = snapshot.val();
-            if (!userData) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
+            if (!userData) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
 
             const hashedPw = await hashPassword(password);
-            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contrasena incorrectos.' };
+            if (hashedPw !== userData.passwordHash) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
 
             return { ok: true, msg: 'Inicio de sesion correcto.', rol: userData.rol };
         }
@@ -1285,7 +1285,10 @@
             }
         }
 
+        let authEventsInitialized = false;
         function initAuthEvents() {
+            if (authEventsInitialized) return;
+            authEventsInitialized = true;
             // Toggle login/register
             document.getElementById('show-register').addEventListener('click', () => {
                 document.getElementById('login-form-container').style.display = 'none';
@@ -1331,7 +1334,7 @@
                 const errorEl = document.getElementById('register-error');
                 errorEl.textContent = '';
 
-                if (password !== password2) { errorEl.textContent = 'Las contrasenas no coinciden.'; return; }
+                if (password !== password2) { errorEl.textContent = 'Las contraseñas no coinciden.'; return; }
                 const result = await registerUser(username, password);
                 if (result.ok) {
                     // Auto-login after registration
@@ -1453,14 +1456,16 @@
                 btn.addEventListener('click', function() {
                     const u = this.getAttribute('data-username');
                     const r = this.getAttribute('data-target-role');
-                    toggleUserRole(u, r).then(() => loadUsersAdminModal());
+                    toggleUserRole(u, r).then(() => loadUsersAdminModal())
+                        .catch(e => showNotification('Error al cambiar rol: ' + e.message, 'error'));
                 });
             });
             tbody.querySelectorAll('.btn-delete-user').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const u = this.getAttribute('data-username');
                     if (confirm('Seguro que deseas eliminar al usuario ' + u + '?')) {
-                        deleteUserAccount(u).then(() => loadUsersAdminModal());
+                        deleteUserAccount(u).then(() => loadUsersAdminModal())
+                            .catch(e => showNotification('Error al eliminar usuario: ' + e.message, 'error'));
                     }
                 });
             });
@@ -1471,8 +1476,8 @@
             username = username.trim().toLowerCase();
             if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
             if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contrasena debe tener al menos 4 caracteres.' };
-            if (password !== password2) return { ok: false, msg: 'Las contrasenas no coinciden.' };
+            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
+            if (password !== password2) return { ok: false, msg: 'Las contraseñas no coinciden.' };
             if (!rol || !['admin', 'usuario'].includes(rol)) rol = 'usuario';
 
             // Check if user already exists
@@ -1697,6 +1702,7 @@
                 updateSyncIndicator('synced');
             } catch (e) {
                 console.error('Error al guardar en Firebase:', e);
+                isLocalSave = false; // Resetear flag para no perder la próxima actualización remota
                 updateSyncIndicator('sync-error');
                 showNotification('Error al sincronizar con Firebase: ' + e.message, 'error');
             }
@@ -1746,8 +1752,8 @@
             const dataRef = db.ref(`${FIREBASE_PATH}/datos`);
             firebaseDataListener = dataRef.on('value', function(snapshot) {
                 if (!snapshot.exists()) {
-                    // No hay datos en Firebase todavía; subir los locales
-                    if (isAdminUser()) {
+                    // No hay datos en Firebase todavía; subir los locales (a menos que se hayan borrado intencionalmente)
+                    if (isAdminUser() && !sessionStorage.getItem('dataJustCleared')) {
                         debouncedSaveToFirebase();
                     }
                     updateSyncIndicator('synced');
@@ -2081,6 +2087,7 @@
         }
 
         function loadSavedData() {
+            const dataJustCleared = sessionStorage.getItem('dataJustCleared');
             const savedData = localStorage.getItem('programsAppData');
             if (savedData) {
                 try {
@@ -2102,12 +2109,12 @@
             const activeCourse = appState.selectedCourse || getCurrentCourse();
             if (!appState.aytoProjects[activeCourse] || appState.aytoProjects[activeCourse].length === 0) {
                 appState.aytoProjects[activeCourse] = JSON.parse(JSON.stringify(defaultAytoProjects));
-                saveData();
+                if (!dataJustCleared) saveData();
             }
             // Si no hay lista de cursos, inicializar con los defaults
             if (!appState.coursesList || appState.coursesList.length === 0) {
                 appState.coursesList = [...defaultCoursesList];
-                saveData();
+                if (!dataJustCleared) saveData();
             }
             if (!appState.selectedCourse) appState.selectedCourse = getCurrentCourse();
             // Asegurar que selectedCourse está en la lista
@@ -3083,14 +3090,18 @@
 
         function normalizeName(name) {
             // TextDecoder Latin1->UTF-8 corrige mojibake de forma robusta
+            // Solo aplicar si todos los caracteres están en rango Latin-1 (evita corromper Unicode > U+00FF)
             if (typeof TextDecoder !== 'undefined') {
                 try {
-                    const bytes = new Uint8Array(name.length);
-                    for (let i = 0; i < name.length; i++) bytes[i] = name.charCodeAt(i);
-                    const decoder = new TextDecoder('latin1');
-                    const decoded = decoder.decode(bytes);
-                    if (decoded !== name && !/[\ufffd]/.test(decoded)) {
-                        name = decoded;
+                    const isLatin1 = [...name].every(ch => ch.charCodeAt(0) <= 0xFF);
+                    if (isLatin1) {
+                        const bytes = new Uint8Array(name.length);
+                        for (let i = 0; i < name.length; i++) bytes[i] = name.charCodeAt(i);
+                        const decoder = new TextDecoder('latin1');
+                        const decoded = decoder.decode(bytes);
+                        if (decoded !== name && !/[\ufffd]/.test(decoded)) {
+                            name = decoded;
+                        }
                     }
                 } catch (e) { /* ignorar */ }
             }
@@ -3177,7 +3188,7 @@
             const nombre = trimmed.substring(commaIndex + 1).trim();
             if (!apellidos) return { valid: false, msg: 'Los apellidos no pueden estar vacíos.' };
             if (!nombre) return { valid: false, msg: 'El nombre no puede estar vacío (después de la coma).' };
-            if (apellidos.split(/\s+/).length < 1) return { valid: false, msg: 'Debe incluir al menos un apellido.' };
+            if (apellidos.split(/\s+/).filter(Boolean).length < 2) return { valid: false, msg: 'Debe incluir al menos dos apellidos separados por espacio.' };
             return { valid: true, name: `${apellidos}, ${nombre}` };
         }
 
@@ -3284,7 +3295,7 @@
             item.classList.add('editing');
             item.innerHTML = `
                 <span class="teacher-item-index">${index + 1}</span>
-                <span class="teacher-item-name"><input type="text" value="${currentName.replace(/"/g, '&quot;')}"></span>
+                <span class="teacher-item-name"><input type="text" value="${escapeHtml(currentName)}"></span>
                 <div style="display:flex;gap:4px;">
                     <button class="btn-sm save" title="Guardar"><i class="fas fa-check"></i></button>
                     <button class="btn-sm cancel-edit" title="Cancelar"><i class="fas fa-times"></i></button>
@@ -3349,6 +3360,7 @@
 
             saveData();
             updateTeacherSelectors();
+            initPrograms(); // Refresh coordinator names on program cards
             showNotification(`Profesor/a actualizado/a a "${validation.name}".`);
         }
 
@@ -3686,10 +3698,15 @@
             if (confirm('¿ESTÁ SEGURO DE QUE QUIERE ELIMINAR TODOS LOS DATOS?\n\nEsta acción eliminará:\n- Lista completa de profesorado\n- Datos de planes y proyectos\n- Toda la configuración\n- Datos de Firebase\n\nEsta operación NO se puede deshacer.')) {
                 try {
                     blockInterface('Eliminando todos los datos...');
+                    // Detener realtime sync primero para evitar que el listener restaure los datos
+                    stopRealtimeSync();
+                    if (syncDebounceTimer) { clearTimeout(syncDebounceTimer); syncDebounceTimer = null; }
                     // Borrar de Firebase primero (para que no se restaure al recargar)
                     await db.ref(`${FIREBASE_PATH}/datos`).remove();
                     await db.ref(`${FIREBASE_PATH}/historial`).remove();
                     localStorage.removeItem('programsAppData');
+                    // Marcar para que la inicialización no restaure datos por defecto
+                    sessionStorage.setItem('dataJustCleared', 'true');
                     location.reload();
                 } catch (e) {
                     console.error('Error al borrar datos de Firebase:', e);
@@ -3724,6 +3741,8 @@
 
             // Cargar datos guardados
             loadSavedData();
+            // Limpiar flag de borrado de datos tras la carga
+            sessionStorage.removeItem('dataJustCleared');
             
             // Inicializar componentes de UI
             initNavigation();
