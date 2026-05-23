@@ -39,8 +39,7 @@
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
         header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 20px 0; box-shadow: var(--shadow); margin-bottom: 30px; }
-        /* ----- 8 PALETAS DE COLOR PARA EL HEADER ----- */
-        .cp-0 header { background: linear-gradient(135deg, #0055a4, #009246); }
+        /* ----- 7 PALETAS DE COLOR PARA EL HEADER ----- */
         .cp-1 header { background: linear-gradient(135deg, #1a237e, #4a148c); }
         .cp-2 header { background: linear-gradient(135deg, #b71c1c, #e65100); }
         .cp-3 header { background: linear-gradient(135deg, #004d40, #00695c); }
@@ -48,20 +47,7 @@
         .cp-5 header { background: linear-gradient(135deg, #4a148c, #880e4f); }
         .cp-6 header { background: linear-gradient(135deg, #0d47a1, #01579b); }
         .cp-7 header { background: linear-gradient(135deg, #33691e, #558b2f); }
-        /* Indicador de paleta activa */
-        .palette-btn { width: 28px; height: 28px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
-        .palette-btn:hover { transform: scale(1.15); }
-        .palette-btn.active { border-color: white; box-shadow: 0 0 0 2px var(--dark); }
-        .palette-btn.cp-0 { background: linear-gradient(135deg, #0055a4, #009246); }
-        .palette-btn.cp-1 { background: linear-gradient(135deg, #1a237e, #4a148c); }
-        .palette-btn.cp-2 { background: linear-gradient(135deg, #b71c1c, #e65100); }
-        .palette-btn.cp-3 { background: linear-gradient(135deg, #004d40, #00695c); }
-        .palette-btn.cp-4 { background: linear-gradient(135deg, #263238, #455a64); }
-        .palette-btn.cp-5 { background: linear-gradient(135deg, #4a148c, #880e4f); }
-        .palette-btn.cp-6 { background: linear-gradient(135deg, #0d47a1, #01579b); }
-        .palette-btn.cp-7 { background: linear-gradient(135deg, #33691e, #558b2f); }
-        .palette-selector { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-        .palette-selector-label { font-size: 0.85rem; font-weight: 600; color: var(--gray); margin-right: 4px; }
+
         .header-content { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
         .logo { display: flex; align-items: center; gap: 15px; }
         .logo i { font-size: 2.5rem; }
@@ -652,12 +638,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label><i class="fas fa-palette"></i> Paleta de color del encabezado:</label>
-                        <div class="palette-selector" id="palette-selector">
-                            <span class="palette-selector-label">Seleccionar:</span>
-                        </div>
-                    </div>
                     
                     <div class="form-group" id="dossier-url-group">
                         <label for="dossier-url-input"><i class="fas fa-link"></i> URL del Dossier para el curso <span id="dossier-url-course-label" style="color: var(--primary);"></span>:</label>
@@ -1197,6 +1177,7 @@
         async function deleteUserAccount(username) {
             if (!currentUser || currentUser.rol !== 'admin') return { ok: false, msg: 'Solo el administrador puede eliminar usuarios.' };
             if (username === currentUser.username) return { ok: false, msg: 'No puedes eliminar tu propia cuenta.' };
+            if (username.toLowerCase() === 'usuario') return { ok: false, msg: 'No se puede eliminar el usuario por defecto.' };
             await db.ref(`usuarios/${username}`).remove();
             return { ok: true, msg: 'Usuario eliminado.' };
         }
@@ -1357,6 +1338,17 @@
                 if (e.key === 'Enter') document.getElementById('login-password').focus();
             });
 
+            // Allow Enter key on register
+            document.getElementById('register-password2').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-btn').click();
+            });
+            document.getElementById('register-password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-password2').focus();
+            });
+            document.getElementById('register-username').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-password').focus();
+            });
+
             // Register
             document.getElementById('register-btn').addEventListener('click', async () => {
                 const username = document.getElementById('register-username').value;
@@ -1462,18 +1454,17 @@
                 const dateStr = data.fechaRegistroLocal || new Date(data.fechaRegistro).toLocaleString('es-ES');
                 const safeUsername = escapeHtml(username);
                 const safeRol = escapeHtml(data.rol || 'usuario');
+                const safeDate = escapeHtml(dateStr);
                 tr.innerHTML = `
                     <td><strong>${safeUsername}</strong> ${isSelf ? '<span style="color:var(--gray);font-size:0.75rem;">(tu)</span>' : ''}</td>
                     <td><span class="role-badge ${safeRol}">${safeRol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
-                    <td style="font-size:0.8rem; color:var(--gray);">${dateStr}</td>
+                    <td style="font-size:0.8rem; color:var(--gray);">${safeDate}</td>
                     <td>
                         ${!isSelf && !(safeUsername === 'usuario') ? `
-                            <button class="action-btn-sm" style="background:${data.rol === 'admin' ? '#e9ecef' : 'var(--accent)'}; color:${data.rol === 'admin' ? 'var(--dark)' : 'white'};"
-                                onclick="toggleUserRole('${safeUsername}', '${data.rol === 'admin' ? 'usuario' : 'admin'}'); loadUsersAdminModal();">
+                            <button class="action-btn-sm" data-action="toggle-role" data-username="${safeUsername}" data-new-role="${data.rol === 'admin' ? 'usuario' : 'admin'}" style="background:${data.rol === 'admin' ? '#e9ecef' : 'var(--accent)'}; color:${data.rol === 'admin' ? 'var(--dark)' : 'white'};">
                                 ${data.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}
                             </button>
-                            <button class="action-btn-sm" style="background:var(--danger); color:white; margin-left:4px;"
-                                onclick="if(confirm('Seguro que deseas eliminar al usuario ${safeUsername}?')){deleteUserAccount('${safeUsername}').then(()=>loadUsersAdminModal());}">
+                            <button class="action-btn-sm" data-action="delete-user" data-username="${safeUsername}" style="background:var(--danger); color:white; margin-left:4px;">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         ` : '<span style="color:var(--gray);font-size:0.8rem;">--</span>'}
@@ -1481,6 +1472,28 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Event delegation para botones de la tabla de usuarios (evita inline onclick)
+            if (!tbody._delegated) {
+                tbody._delegated = true;
+                tbody.addEventListener('click', async function(e) {
+                    const btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    const action = btn.getAttribute('data-action');
+                    const username = btn.getAttribute('data-username');
+                    if (!username) return;
+                    if (action === 'toggle-role') {
+                        const newRole = btn.getAttribute('data-new-role');
+                        await toggleUserRole(username, newRole);
+                        loadUsersAdminModal();
+                    } else if (action === 'delete-user') {
+                        if (confirm('¿Seguro que deseas eliminar al usuario ' + username + '?')) {
+                            await deleteUserAccount(username);
+                            loadUsersAdminModal();
+                        }
+                    }
+                });
+            }
         }
 
         // Registro de usuarios por parte del administrador
@@ -1529,6 +1542,13 @@
         // FUNCIONES UTILITARIAS
         // ================================================
 
+        // Handler global para promesas rechazadas no capturadas
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Promesa rechazada no capturada:', event.reason);
+            // Evitar que el error se propague silenciosamente
+            event.preventDefault();
+        });
+
         // Escapar HTML para prevenir inyección XSS
         function escapeHtml(s) {
             if (!s) return '';
@@ -1548,6 +1568,7 @@
         // FUNCIONES UTILITARIAS (fin)
         // ================================================
 
+        let notificationTimer = null;
         function showNotification(msg, type = 'success') {
             if (isLoadingFromCloud && type !== 'error') return;
             const area = document.getElementById('notification-area');
@@ -1555,7 +1576,8 @@
             msgEl.textContent = msg;
             msgEl.className = `notification ${type}`;
             area.classList.remove('hidden');
-            setTimeout(() => area.classList.add('hidden'), 4000);
+            if (notificationTimer) clearTimeout(notificationTimer);
+            notificationTimer = setTimeout(() => { notificationTimer = null; area.classList.add('hidden'); }, 4000);
         }
 
         let blockInterfaceTimer = null;
@@ -1595,6 +1617,24 @@
             usuario: 'Consulta de Programas Educativos'
         };
 
+        function getPaletteForCourse(courseKey) {
+            // Asignar paleta según la posición del curso en la lista (1-7)
+            const idx = appState.coursesList.indexOf(courseKey);
+            if (idx >= 0) return (idx % 7) + 1;
+            return 0; // Sin paleta especial → estilo base
+        }
+
+        function applyPaletteByCourse(courseKey) {
+            // Quitar todas las clases de paleta (1 a 7)
+            for (let i = 1; i <= 7; i++) {
+                document.body.classList.remove('cp-' + i);
+            }
+            const palette = getPaletteForCourse(courseKey);
+            if (palette >= 1) {
+                document.body.classList.add('cp-' + palette);
+            }
+        }
+
         function updateHeaderStyle() {
             const admin = isAdminUser();
             // Banner text según rol
@@ -1602,39 +1642,8 @@
             if (bannerEl) {
                 bannerEl.textContent = BANNER_TEXT[admin ? 'admin' : 'usuario'] || BANNER_TEXT.usuario;
             }
-            // Aplicar paleta de color guardada
-            const savedPalette = localStorage.getItem('selectedPalette') || '0';
-            applyPalette(savedPalette);
-        }
-
-        function applyPalette(index) {
-            // Quitar todas las clases de paleta
-            for (let i = 0; i <= 7; i++) {
-                document.body.classList.remove('cp-' + i);
-            }
-            // Aplicar la nueva
-            document.body.classList.add('cp-' + index);
-            localStorage.setItem('selectedPalette', index);
-            // Actualizar botones activos
-            document.querySelectorAll('.palette-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-palette') === String(index));
-            });
-        }
-
-        function initPaletteSelector() {
-            const container = document.getElementById('palette-selector');
-            if (!container) return;
-            const savedPalette = localStorage.getItem('selectedPalette') || '0';
-            for (let i = 0; i <= 7; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'palette-btn cp-' + i + (String(i) === savedPalette ? ' active' : '');
-                btn.setAttribute('data-palette', String(i));
-                btn.title = 'Paleta ' + (i + 1);
-                btn.addEventListener('click', function() {
-                    applyPalette(this.getAttribute('data-palette'));
-                });
-                container.appendChild(btn);
-            }
+            // Aplicar paleta según curso activo
+            applyPaletteByCourse(appState.selectedCourse);
         }
 
         function saveLastUpdate(source) {
@@ -1761,6 +1770,7 @@
                 updateSyncIndicator('synced');
             } catch (e) {
                 console.error('Error al guardar en Firebase:', e);
+                isLocalSave = false;
                 updateSyncIndicator('sync-error');
                 showNotification('Error al sincronizar con Firebase: ' + e.message, 'error');
             }
@@ -2551,6 +2561,7 @@
             // Actualizar la UI del curso en header y dossier
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
             updateDossierButton();
+            applyPaletteByCourse(appState.selectedCourse);
             syncAytoCourse();
             showNotification(`Curso activo: ${appState.selectedCourse}`);
         }
@@ -2990,7 +3001,7 @@
             const row = document.createElement('div');
             row.className = 'activity-row';
             row.innerHTML = `
-                <input type="text" placeholder="Describe una actividad..." value="${value.replace(/"/g, '&quot;')}">
+                <input type="text" placeholder="Describe una actividad..." value="${escapeHtml(value)}">
                 <button type="button" class="remove-activity" title="Eliminar"><i class="fas fa-times"></i></button>
             `;
             row.querySelector('.remove-activity').addEventListener('click', function() {
@@ -3321,7 +3332,7 @@
             item.classList.add('editing');
             item.innerHTML = `
                 <span class="teacher-item-index">${index + 1}</span>
-                <span class="teacher-item-name"><input type="text" value="${currentName.replace(/"/g, '&quot;')}"></span>
+                <span class="teacher-item-name"><input type="text" value="${escapeHtml(currentName)}"></span>
                 <div style="display:flex;gap:4px;">
                     <button class="btn-sm save" title="Guardar"><i class="fas fa-check"></i></button>
                     <button class="btn-sm cancel-edit" title="Cancelar"><i class="fas fa-times"></i></button>
@@ -3782,7 +3793,8 @@
             initCollapsibles();
             initAytoTab();
             initAuthEvents();
-            initPaletteSelector();
+            // Aplicar paleta según curso activo
+            applyPaletteByCourse(appState.selectedCourse);
 
             // Conectar a Firebase: cargar datos iniciales y activar sincronización en tiempo real
             try {
