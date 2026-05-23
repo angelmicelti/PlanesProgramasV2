@@ -2284,6 +2284,10 @@
 
                 programsData[type].forEach(program => {
                     const participation = getActiveParticipation()[program.id] || { participates: false, coordinator: '' };
+
+                    // Usuario (solo lectura): solo ver programas que tienen coordinador asignado
+                    if (!admin && !participation.coordinator) return;
+
                     const programCard = document.createElement('div');
                     programCard.className = `program-card ${type === 'ayto-projects' ? 'type-ayto' : type}`;
 
