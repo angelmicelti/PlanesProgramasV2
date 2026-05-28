@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planes-programas-v2.9';
+const CACHE_NAME = 'planes-programas-v2.10';
 const BASE_PATH = '/PlanesProgramasV2/';
 
 const PRECACHE_URLS = [
