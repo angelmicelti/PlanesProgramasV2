@@ -1141,7 +1141,7 @@
             if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
 
             // Check if user already exists
-            const snapshot = await db.ref('usuarios').once('value');
+            const snapshot = await db.ref(USERS_PATH).once('value');
             const users = snapshot.val() || {};
 
             if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
@@ -1150,7 +1150,7 @@
             const rol = 'usuario';
 
             const hashedPw = await hashPassword(password);
-            await db.ref(`usuarios/${username}`).set({
+            await db.ref(`${USERS_PATH}/${username}`).set({
                 passwordHash: hashedPw,
                 rol: rol,
                 fechaRegistro: new Date().toISOString(),
@@ -1164,7 +1164,7 @@
             username = username.trim().toLowerCase();
             if (!username || !password) return { ok: false, msg: 'Introduce usuario y contraseña.' };
 
-            const snapshot = await db.ref(`usuarios/${username}`).once('value');
+            const snapshot = await db.ref(`${USERS_PATH}/${username}`).once('value');
             const userData = snapshot.val();
             if (!userData) return { ok: false, msg: 'Usuario o contraseña incorrectos.' };
 
@@ -1178,7 +1178,7 @@
             if (!currentUser || currentUser.rol !== 'admin') return { ok: false, msg: 'Solo el administrador puede eliminar usuarios.' };
             if (username === currentUser.username) return { ok: false, msg: 'No puedes eliminar tu propia cuenta.' };
             if (username.toLowerCase() === 'usuario') return { ok: false, msg: 'No se puede eliminar el usuario por defecto.' };
-            await db.ref(`usuarios/${username}`).remove();
+            await db.ref(`${USERS_PATH}/${username}`).remove();
             return { ok: true, msg: 'Usuario eliminado.' };
         }
 
@@ -1195,7 +1195,7 @@
                 showNotification('No se puede cambiar el rol del usuario por defecto.', 'error');
                 return;
             }
-            await db.ref(`usuarios/${username}/rol`).set(newRol);
+            await db.ref(`${USERS_PATH}/${username}/rol`).set(newRol);
         }
 
         function setUserLoggedIn(username, rol) {
@@ -1263,7 +1263,7 @@
                 try {
                     const user = JSON.parse(stored);
                     // Verify user still exists in Firebase
-                    const snapshot = await db.ref(`usuarios/${user.username}`).once('value');
+                    const snapshot = await db.ref(`${USERS_PATH}/${user.username}`).once('value');
                     if (snapshot.exists()) {
                         setUserLoggedIn(user.username, snapshot.val().rol);
                         return true;
@@ -1280,10 +1280,10 @@
         // Auto-create default readonly user "usuario" if it doesn't exist
         async function ensureDefaultReadonlyUser() {
             try {
-                const snapshot = await db.ref('usuarios/usuario').once('value');
+                const snapshot = await db.ref(`${USERS_PATH}/usuario`).once('value');
                 if (!snapshot.exists()) {
                     const hashedPw = await hashPassword('usuario');
-                    await db.ref('usuarios/usuario').set({
+                    await db.ref(`${USERS_PATH}/usuario`).set({
                         passwordHash: hashedPw,
                         rol: 'usuario',
                         fechaRegistro: new Date().toISOString(),
@@ -1444,7 +1444,7 @@
             document.getElementById('admin-add-user-error').style.color = 'var(--danger)';
             modal.classList.add('active');
 
-            const snapshot = await db.ref('usuarios').once('value');
+            const snapshot = await db.ref(USERS_PATH).once('value');
             const users = snapshot.val() || {};
 
             tbody.innerHTML = '';
@@ -1506,12 +1506,12 @@
             if (!rol || !['admin', 'usuario'].includes(rol)) rol = 'usuario';
 
             // Check if user already exists
-            const snapshot = await db.ref('usuarios').once('value');
+            const snapshot = await db.ref(USERS_PATH).once('value');
             const users = snapshot.val() || {};
             if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
 
             const hashedPw = await hashPassword(password);
-            await db.ref(`usuarios/${username}`).set({
+            await db.ref(`${USERS_PATH}/${username}`).set({
                 passwordHash: hashedPw,
                 rol: rol,
                 fechaRegistro: new Date().toISOString(),
@@ -1537,6 +1537,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const FIREBASE_PATH = 'programas_educativos';
+        const USERS_PATH = 'prog_edu_usuarios';
 
         // ================================================
         // FUNCIONES UTILITARIAS
