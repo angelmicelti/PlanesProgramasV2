@@ -1301,6 +1301,40 @@
             }
         }
 
+        // Migración automática: copia usuarios de la ruta compartida (LEGACY) a la ruta aislada (USERS_PATH)
+        // Se ejecuta una sola vez: si la nueva ruta ya tiene usuarios, no hace nada.
+        async function migrateUsersIfNeeded() {
+            try {
+                const newSnap = await db.ref(USERS_PATH).once('value');
+                const newUsers = newSnap.val() || {};
+
+                // Si la nueva ruta ya tiene usuarios, no migrar (ya se hizo antes o ya hay datos)
+                if (Object.keys(newUsers).length > 0) {
+                    console.log(`Migración omitida: ya hay ${Object.keys(newUsers).length} usuario(s) en la nueva ruta.`);
+                    return;
+                }
+
+                // Leer usuarios de la ruta legacy
+                const legacySnap = await db.ref(LEGACY_USERS_PATH).once('value');
+                const legacyUsers = legacySnap.val() || {};
+
+                if (Object.keys(legacyUsers).length === 0) {
+                    console.log('Migración omitida: no hay usuarios en la ruta legacy.');
+                    return;
+                }
+
+                // Copiar todos los usuarios a la nueva ruta
+                const updates = {};
+                Object.entries(legacyUsers).forEach(([username, data]) => {
+                    updates[`${USERS_PATH}/${username}`] = data;
+                });
+                await db.ref().update(updates);
+                console.log(`Migración completada: ${Object.keys(legacyUsers).length} usuario(s) copiados de "${LEGACY_USERS_PATH}" a "${USERS_PATH}".`);
+            } catch (e) {
+                console.error('Error en migración de usuarios:', e);
+            }
+        }
+
         let authEventsInitialized = false;
         function initAuthEvents() {
             if (authEventsInitialized) return; // Evitar listeners duplicados
@@ -1541,6 +1575,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const FIREBASE_PATH = 'programas_educativos';
+        const LEGACY_USERS_PATH = 'usuarios';
         const USERS_PATH = 'prog_edu_usuarios';
 
         // ================================================
@@ -3823,6 +3858,9 @@
         // INICIALIZACIÓN
         // ================================================
         document.addEventListener('DOMContentLoaded', async function() {
+            // Migrar usuarios de la ruta compartida a la ruta aislada (si es necesario)
+            await migrateUsersIfNeeded();
+
             // Check if user has an existing session
             const hasSession = await checkExistingSession();
             if (hasSession) {
