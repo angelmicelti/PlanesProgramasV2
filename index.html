@@ -1146,8 +1146,9 @@
 
             if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
 
-            // New users are always "usuario" role — admins are created through the admin panel
-            const rol = 'usuario';
+            // Si es el primer usuario registrado, se le da rol de admin automáticamente
+            const isFirstUser = Object.keys(users).length === 0;
+            const rol = isFirstUser ? 'admin' : 'usuario';
 
             const hashedPw = await hashPassword(password);
             await db.ref(`${USERS_PATH}/${username}`).set({
@@ -1157,6 +1158,9 @@
                 fechaRegistroLocal: new Date().toLocaleString('es-ES')
             });
 
+            if (isFirstUser) {
+                return { ok: true, msg: 'Primer usuario registrado. Se te ha asignado el rol de Administrador.', rol: rol };
+            }
             return { ok: true, msg: 'Cuenta creada correctamente. Un administrador debe activarla.', rol: rol };
         }
 
