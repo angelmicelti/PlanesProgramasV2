@@ -78,6 +78,29 @@
         .program-card.type-c { border-left: 4px solid var(--accent); background-color: rgba(255, 102, 0, 0.05); }
         .program-card.type-ayto { border-left: 4px solid var(--ayto-color); background-color: rgba(156, 39, 176, 0.05); }
 
+        /* ----- ACCIONES DE EDICIÓN EN TARJETAS DE PROGRAMA ----- */
+        .program-actions { display: flex; gap: 4px; flex-shrink: 0; align-self: flex-start; }
+        .program-actions .btn-sm { border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: var(--transition); }
+        .program-actions .btn-sm.edit { background: #2196F3; color: white; }
+        .program-actions .btn-sm.delete { background: var(--danger); color: white; }
+        .program-actions .btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
+        .add-program-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
+
+        /* ----- ARCHIVO DE PROGRAMAS ELIMINADOS (restauración de tarjetas) ----- */
+        .archived-hint { font-size: 0.88rem; color: #555; margin-bottom: 10px; line-height: 1.4; }
+        .archived-programs-list { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 4px; }
+        .archived-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; flex-wrap: wrap; }
+        .archived-item-name { font-weight: 600; color: var(--primary); font-size: 0.98rem; }
+        .archived-item-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+        .archived-badge { padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; color: white; }
+        .archived-badge.type-a { background: var(--primary); }
+        .archived-badge.type-b { background: var(--secondary); }
+        .archived-badge.type-c { background: var(--accent); }
+        .archived-date { font-size: 0.78rem; color: #777; }
+        .archived-item .program-link { margin-top: 4px; font-size: 0.82rem; }
+        #archived-programs-empty { text-align: center; color: #777; padding: 26px 10px; font-size: 0.92rem; line-height: 1.5; }
+        .btn-restore { white-space: nowrap; }
+
         .program-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
         .program-name { font-weight: 600; color: var(--primary); font-size: 1.1rem; margin-bottom: 5px; }
         .program-link { color: var(--secondary); text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
@@ -746,6 +769,10 @@
                 <i class="fas fa-arrow-left"></i> Volver al Inicio
             </button>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio</h2>
+            <div class="add-program-bar admin-only flex-row">
+                <button type="button" class="btn btn-secondary" id="view-archived-type-a"><i class="fas fa-box-archive"></i> Programas archivados</button>
+                <button type="button" class="btn btn-primary" id="add-program-type-a"><i class="fas fa-plus"></i> Añadir programa</button>
+            </div>
             <div class="programs-grid" id="programs-type-a"></div>
         </div>
 
@@ -754,6 +781,10 @@
                 <i class="fas fa-arrow-left"></i> Volver al Inicio
             </button>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general</h2>
+            <div class="add-program-bar admin-only flex-row">
+                <button type="button" class="btn btn-secondary" id="view-archived-type-b"><i class="fas fa-box-archive"></i> Programas archivados</button>
+                <button type="button" class="btn btn-primary" id="add-program-type-b"><i class="fas fa-plus"></i> Añadir programa</button>
+            </div>
             <div class="programs-grid" id="programs-type-b"></div>
         </div>
 
@@ -762,6 +793,10 @@
                 <i class="fas fa-arrow-left"></i> Volver al Inicio
             </button>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica</h2>
+            <div class="add-program-bar admin-only flex-row">
+                <button type="button" class="btn btn-secondary" id="view-archived-type-c"><i class="fas fa-box-archive"></i> Programas archivados</button>
+                <button type="button" class="btn btn-primary" id="add-program-type-c"><i class="fas fa-plus"></i> Añadir programa</button>
+            </div>
             <div class="programs-grid" id="programs-type-c"></div>
         </div>
         
@@ -972,6 +1007,67 @@
         </div>
     </div>
     
+    <!-- MODAL PROGRAMA (añadir / editar) -->
+    <div id="modal-program" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><span class="title-icon"><i class="fas fa-clipboard-list"></i></span> <span id="program-modal-title-text">Nuevo programa</span></h3>
+                <button type="button" class="close-btn" id="close-program-modal">Cerrar</button>
+            </div>
+            <form id="program-form">
+                <div class="modal-body">
+                    <input type="hidden" id="program-modal-program-id">
+                    <input type="hidden" id="program-modal-original-type">
+                    <div class="form-group">
+                        <label for="program-modal-name">Nombre del programa: *</label>
+                        <input type="text" id="program-modal-name" class="form-control" placeholder="Nombre del programa" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="program-modal-url">URL de información (opcional):</label>
+                        <input type="text" id="program-modal-url" class="form-control" placeholder="https://www.juntadeandalucia.es/..." autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="program-modal-type">Categoría:</label>
+                        <select id="program-modal-type" class="form-control">
+                            <option value="type-a">Tipo A - Participación de oficio</option>
+                            <option value="type-b">Tipo B - Convocatoria general</option>
+                            <option value="type-c">Tipo C - Convocatoria específica</option>
+                        </select>
+                    </div>
+                    <div id="program-modal-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 8px; min-height: 18px;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-program-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PROGRAMAS ARCHIVADOS (tarjetas de programas eliminadas) -->
+    <div id="modal-archived-programs" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><span class="title-icon"><i class="fas fa-box-archive"></i></span> Programas archivados</h3>
+                <button type="button" class="close-btn" id="close-archived-modal">Cerrar</button>
+            </div>
+            <div class="modal-body">
+                <p class="archived-hint">Las tarjetas de programas que se eliminan quedan guardadas aquí. Puede restaurarlas en su categoría original cuando vuelva a necesitarlas.</p>
+                <div class="form-group">
+                    <label for="archived-filter-type">Filtrar por categoría:</label>
+                    <select id="archived-filter-type" class="form-control">
+                        <option value="all">Todas las categorías</option>
+                        <option value="type-a">Tipo A - Participación de oficio</option>
+                        <option value="type-b">Tipo B - Convocatoria general</option>
+                        <option value="type-c">Tipo C - Convocatoria específica</option>
+                    </select>
+                </div>
+                <div id="archived-programs-list" class="archived-programs-list"></div>
+                <div id="archived-programs-empty" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div class="container">
             <p> Ángel Millán León - 2025</p>
@@ -990,6 +1086,7 @@
             teachers: {},        // Objeto indexado por curso: { '2025-2026': ['Prof1', ...], ... }
             aytoProjects: {},    // Objeto indexado por curso: { '2025-2026': [...], ... }
             coursesList: [],
+            archivedPrograms: [],  // Tarjetas de programas eliminadas (guardadas para poder restaurarlas)
             dossierUrls: {
                 '2025-2026': 'https://www.juntadeandalucia.es/educacion/portales/documents/20123/2475523/17092025_dosier_programas_educativos.pdf/4272f22a-ec05-b29c-e75a-0e16ded1faf2?t=1758094184028'
             }
@@ -1056,8 +1153,8 @@
         let lastRemoteDataHash = '';       // Hash del último dato remoto (evitar re-render innecesario)
         const SYNC_DEBOUNCE_MS = 1500;     // Espera antes de enviar cambios a Firebase
 
-        // Datos de los programas
-        const programsData = {
+        // Catálogo de programas por defecto (plantilla inicial oficial)
+        const defaultProgramsData = {
             'type-a': [
                 { id: 'a1', name: 'Bienestar Emocional', url: 'https://www.juntadeandalucia.es/educacion/portales/web/planes-y-programas/programas-desarrollo-educativo/bienestar-emocional/presentacion' },
                 { id: 'a2', name: 'Bibliotecas Escolares', url: 'https://www.juntadeandalucia.es/educacion/eaprendizaje/programa-bibliotecas-escolares/' },
@@ -1100,6 +1197,11 @@
                 { id: 'c19', name: 'Programa de Intercambios Escolares', url: 'https://www.juntadeandalucia.es/educacion/portales/web/programas-educativos-internacionales/otros-programas/intercambios-escolares' }
             ]
         };
+
+        // Catálogo de programas en uso (editable por el administrador).
+        // Se mantiene enlazado (mismo objeto) con appState.programs para
+        // persistir en localStorage, Firebase y JSON de exportación/importación.
+        let programsData = JSON.parse(JSON.stringify(defaultProgramsData));
 
         // ================================================
         // Estado de sesión del usuario
@@ -1634,6 +1736,8 @@
                 aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || [],
                 dossierUrls: appState.dossierUrls || {},
+                programs: appState.programs || programsData,
+                archivedPrograms: Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : [],
                 lastModifiedBy: currentUser ? currentUser.username : 'unknown',
                 lastModifiedAt: new Date().toISOString()
             };
@@ -1651,7 +1755,9 @@
                 s: data.selectedCourse,
                 a: data.aytoProjects,
                 c: data.coursesList,
-                d: data.dossierUrls
+                d: data.dossierUrls,
+                g: data.programs,
+                r: data.archivedPrograms
             });
         }
 
@@ -1709,6 +1815,13 @@
             }
             appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
             appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
+            appState.programs = normalizePrograms(data.programs);
+            programsData = appState.programs;
+            // Archivo de programas eliminados: si el dato remoto no incluye la clave
+            // (backups antiguos o clientes sin esta función), se conserva el actual
+            if (data && data.archivedPrograms !== undefined) {
+                appState.archivedPrograms = normalizeArchivedPrograms(data.archivedPrograms);
+            }
             ensureActiveCourseData();
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
@@ -1720,6 +1833,8 @@
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
+            // Si el modal del archivo está abierto, refrescar su lista con lo recibido
+            if (document.getElementById('modal-archived-programs').classList.contains('active')) renderArchivedPrograms();
             renderAytoProjects();
             renderCourses();
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
@@ -2079,10 +2194,17 @@
                         teachers: normalizeTeachers(parsed.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(parsed.aytoProjects, selCourse),
                         coursesList: parsed.coursesList || [],
-                        dossierUrls: parsed.dossierUrls || {}
+                        dossierUrls: parsed.dossierUrls || {},
+                        programs: normalizePrograms(parsed.programs),
+                        archivedPrograms: normalizeArchivedPrograms(parsed.archivedPrograms)
                     };
                 } catch (e) { console.warn('Error al cargar datos guardados'); }
             }
+            // Catálogo de programas: usar el guardado o los por defecto, y enlazar programsData
+            appState.programs = normalizePrograms(appState.programs);
+            programsData = appState.programs;
+            // Archivo de programas eliminados
+            appState.archivedPrograms = normalizeArchivedPrograms(appState.archivedPrograms);
             // Asegurar datos para el curso activo
             ensureActiveCourseData();
             // Si no hay proyectos ayto, inicializar con los defaults para el curso seleccionado
@@ -2221,12 +2343,16 @@
                     programCard.innerHTML = `
                         <div class="program-header">
                             <div>
-                                <div class="program-name">${program.name}</div>
+                                <div class="program-name">${escapeHtml(program.name)}</div>
                                 ${program.url ? `<a href="${escapeHtml(program.url)}" target="_blank" class="program-link">
                                     <i class="fas fa-external-link-alt"></i> Más información
                                 </a>` : ''}
                                 ${coordText}
                             </div>
+                            ${admin ? `<div class="program-actions">
+                                <button type="button" class="btn-sm edit" title="Editar programa"><i class="fas fa-pen"></i></button>
+                                <button type="button" class="btn-sm delete" title="Eliminar programa"><i class="fas fa-trash"></i></button>
+                            </div>` : ''}
                         </div>
                         ${admin ? `<div class="program-check">
                             <label class="check-label">
@@ -2242,6 +2368,11 @@
                     container.appendChild(programCard);
 
                     if (admin) {
+                        const editBtn = programCard.querySelector('.program-actions .btn-sm.edit');
+                        const deleteBtn = programCard.querySelector('.program-actions .btn-sm.delete');
+                        if (editBtn) editBtn.addEventListener('click', () => openProgramModal(type, program.id));
+                        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteProgram(type, program.id));
+
                         const checkbox = document.getElementById(`check-${program.id}`);
                         const coordinatorBtn = document.getElementById(`coordinator-${program.id}`);
                         const coordLabel = document.getElementById(`coord-${program.id}`);
@@ -2279,6 +2410,9 @@
                     }
                 });
             }
+
+            // Refrescar el contador de archivados en los botones de las categorías
+            updateArchivedButtons();
         }
 
         function handleParticipationChange(programId, participates) {
@@ -2311,9 +2445,353 @@
             modal.classList.add('active');
         }
 
+        // ================================================
+        // GESTIÓN DE PROGRAMAS (AÑADIR / EDITAR / ELIMINAR)
+        // ================================================
+
+        // Normaliza el catálogo de programas: valida estructura y completa con
+        // los valores por defecto lo que falte. Siempre devuelve las 3 categorías.
+        function normalizePrograms(data) {
+            const defaults = JSON.parse(JSON.stringify(defaultProgramsData));
+            if (!data || typeof data !== 'object' || Array.isArray(data)) return defaults;
+            const result = {};
+            ['type-a', 'type-b', 'type-c'].forEach(type => {
+                const list = data[type];
+                // Un array (aunque esté vacío) respeta lo guardado: si se eliminaron
+                // todas las tarjetas de la categoría no se regeneran los programas
+                // por defecto. Solo se usan los defaults si la categoría no existe.
+                if (Array.isArray(list)) {
+                    result[type] = list
+                        .filter(p => p && typeof p === 'object' && p.id && p.name)
+                        .map(p => ({ id: String(p.id), name: String(p.name), url: p.url ? String(p.url) : '' }));
+                } else {
+                    result[type] = defaults[type];
+                }
+            });
+            return result;
+        }
+
+        // Genera un id único para un nuevo programa de la categoría indicada.
+        // Empieza en 100 para no chocar con los ids oficiales (a1..a99).
+        function generateProgramId(type) {
+            const prefix = type.replace('type-', '');
+            let max = 99;
+            const consider = p => {
+                const m = String(p.id).match(new RegExp('^' + prefix + '(\\d+)$'));
+                if (m) max = Math.max(max, parseInt(m[1], 10));
+            };
+            (programsData[type] || []).forEach(consider);
+            // Evitar colisiones también con los ids de programas archivados
+            getArchivedPrograms().forEach(consider);
+            return prefix + (max + 1);
+        }
+
+        // Abre el modal de programa en modo alta (programId = null) o edición
+        function openProgramModal(type, programId) {
+            if (!isAdminUser()) return;
+            const modal = document.getElementById('modal-program');
+            const titleEl = document.getElementById('program-modal-title-text');
+            const nameInput = document.getElementById('program-modal-name');
+            const urlInput = document.getElementById('program-modal-url');
+            const typeSelect = document.getElementById('program-modal-type');
+            const errorEl = document.getElementById('program-modal-error');
+            const idInput = document.getElementById('program-modal-program-id');
+            const origTypeInput = document.getElementById('program-modal-original-type');
+
+            errorEl.textContent = '';
+            typeSelect.value = type;
+
+            if (programId) {
+                const program = (programsData[type] || []).find(p => p.id === programId);
+                if (!program) return;
+                titleEl.textContent = 'Editar programa';
+                nameInput.value = program.name;
+                urlInput.value = program.url || '';
+                idInput.value = programId;
+                origTypeInput.value = type;
+            } else {
+                titleEl.textContent = 'Nuevo programa';
+                nameInput.value = '';
+                urlInput.value = '';
+                idInput.value = '';
+                origTypeInput.value = type;
+            }
+
+            modal.classList.add('active');
+            setTimeout(() => nameInput.focus(), 50);
+        }
+
+        function closeProgramModal() {
+            document.getElementById('modal-program').classList.remove('active');
+        }
+
+        // Guarda (crea o actualiza) el programa del modal
+        function saveProgramFromModal(event) {
+            event.preventDefault();
+            if (!isAdminUser()) return;
+
+            const nameInput = document.getElementById('program-modal-name');
+            const urlInput = document.getElementById('program-modal-url');
+            const typeSelect = document.getElementById('program-modal-type');
+            const errorEl = document.getElementById('program-modal-error');
+            const idInput = document.getElementById('program-modal-program-id');
+            const origTypeInput = document.getElementById('program-modal-original-type');
+
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+            const targetType = typeSelect.value;
+            const origType = origTypeInput.value;
+            const programId = idInput.value;
+
+            // Validaciones
+            if (!name) { errorEl.textContent = 'El nombre del programa es obligatorio.'; return; }
+            if (url && !/^https?:\/\//i.test(url)) {
+                errorEl.textContent = 'La URL debe empezar por http:// o https://';
+                return;
+            }
+            const duplicado = (programsData[targetType] || []).some(p =>
+                p.name.toLowerCase() === name.toLowerCase() && p.id !== programId
+            );
+            if (duplicado) { errorEl.textContent = 'Ya existe un programa con ese nombre en esta categoría.'; return; }
+
+            if (programId) {
+                // Edición: localizar el programa (puede cambiar de categoría)
+                const program = (programsData[origType] || []).find(p => p.id === programId);
+                if (!program) { errorEl.textContent = 'No se ha encontrado el programa.'; return; }
+                program.name = name;
+                program.url = url;
+                if (targetType !== origType) {
+                    programsData[origType] = programsData[origType].filter(p => p.id !== programId);
+                    programsData[targetType].push(program);
+                }
+                showNotification(`Programa "${name}" actualizado.`);
+            } else {
+                // Alta: crear con un id nuevo en la categoría seleccionada
+                const newId = generateProgramId(targetType);
+                programsData[targetType].push({ id: newId, name: name, url: url });
+                showNotification(`Programa "${name}" añadido correctamente.`);
+            }
+
+            saveData();          // Persistir (localStorage + Firebase) - programs está dentro de appState
+            initPrograms();      // Re-renderizar las tarjetas
+            closeProgramModal();
+        }
+
+        // Elimina un programa: lo retira del catálogo, limpia su participación y
+        // coordinación en todos los cursos y GUARDA LA TARJETA en el archivo de
+        // programas eliminados, desde donde podrá restaurarla más adelante.
+        function deleteProgram(type, programId) {
+            if (!isAdminUser()) return;
+            const program = (programsData[type] || []).find(p => p.id === programId);
+            if (!program) return;
+
+            if (!confirm(`¿Eliminar el programa "${program.name}"?\n\nSe retirará de la categoría y se eliminará su información de participación y coordinación en todos los cursos.\n\nLa tarjeta quedará guardada en "Programas archivados" y podrá restaurarla más adelante.`)) return;
+
+            // Quitar del catálogo
+            programsData[type] = programsData[type].filter(p => p.id !== programId);
+
+            // Guardar la tarjeta en el archivo de programas eliminados
+            // (si ya había una archivada con el mismo id, se sustituye por la nueva)
+            if (!Array.isArray(appState.archivedPrograms)) appState.archivedPrograms = [];
+            appState.archivedPrograms = appState.archivedPrograms.filter(p => p.id !== programId);
+            appState.archivedPrograms.push({
+                id: program.id,
+                name: program.name,
+                url: program.url || '',
+                type: type,
+                archivedAt: new Date().toISOString()
+            });
+
+            // Limpiar participación en todos los cursos
+            if (appState.participation) {
+                for (const course in appState.participation) {
+                    if (appState.participation[course] && appState.participation[course][programId]) {
+                        delete appState.participation[course][programId];
+                    }
+                }
+            }
+
+            saveData();
+            initPrograms();
+            showNotification(`Programa "${program.name}" archivado. Puede restaurarlo desde "Programas archivados".`);
+        }
+
+        // ================================================
+        // ARCHIVO DE PROGRAMAS ELIMINADOS
+        // ================================================
+
+        // Devuelve la lista de programas archivados (eliminados) de forma segura
+        function getArchivedPrograms() {
+            return Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : [];
+        }
+
+        // Normaliza el archivo de programas eliminados: valida cada entrada
+        // (id con el patrón conocido, nombre y categoría válidos) y deduplica por id.
+        function normalizeArchivedPrograms(data) {
+            if (!Array.isArray(data)) return [];
+            const validTypes = ['type-a', 'type-b', 'type-c'];
+            const byId = {};
+            data.forEach(p => {
+                if (!p || typeof p !== 'object') return;
+                const id = String(p.id || '');
+                const name = String(p.name || '').trim();
+                const type = validTypes.indexOf(p.type) !== -1 ? p.type : '';
+                if (!/^[abc]\d+$/.test(id) || !name || !type) return;
+                byId[id] = {
+                    id: id,
+                    name: name,
+                    url: p.url ? String(p.url) : '',
+                    type: type,
+                    archivedAt: p.archivedAt ? String(p.archivedAt) : ''
+                };
+            });
+            return Object.keys(byId).map(k => byId[k]);
+        }
+
+        // Etiqueta corta de la categoría para mensajes y distintivos
+        function getTypeLabel(type) {
+            if (type === 'type-a') return 'Tipo A';
+            if (type === 'type-b') return 'Tipo B';
+            if (type === 'type-c') return 'Tipo C';
+            return type;
+        }
+
+        // Formatea la fecha de archivado (ISO) para mostrarla en español
+        function formatArchivedDate(iso) {
+            try {
+                const d = new Date(iso);
+                if (isNaN(d.getTime())) return '';
+                return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch (e) { return ''; }
+        }
+
+        // Abre el modal del archivo de programas eliminados
+        function openArchivedModal(filterType) {
+            if (!isAdminUser()) return;
+            const modal = document.getElementById('modal-archived-programs');
+            const filterSelect = document.getElementById('archived-filter-type');
+            filterSelect.value = ['type-a', 'type-b', 'type-c'].indexOf(filterType) !== -1 ? filterType : 'all';
+            renderArchivedPrograms();
+            modal.classList.add('active');
+        }
+
+        function closeArchivedModal() {
+            document.getElementById('modal-archived-programs').classList.remove('active');
+        }
+
+        // Renderiza la lista de programas archivados aplicando el filtro de categoría
+        function renderArchivedPrograms() {
+            const listEl = document.getElementById('archived-programs-list');
+            const emptyEl = document.getElementById('archived-programs-empty');
+            const filterSelect = document.getElementById('archived-filter-type');
+            if (!listEl || !emptyEl || !filterSelect) return;
+            const filter = filterSelect.value;
+
+            const archived = getArchivedPrograms()
+                .filter(p => filter === 'all' || p.type === filter)
+                .sort((a, b) => String(b.archivedAt || '').localeCompare(String(a.archivedAt || '')));
+
+            listEl.innerHTML = '';
+            if (archived.length === 0) {
+                emptyEl.style.display = 'block';
+                emptyEl.textContent = filter === 'all'
+                    ? 'No hay programas archivados. Los programas que elimine quedarán guardados aquí y podrán restaurarse.'
+                    : `No hay programas archivados en la categoría ${getTypeLabel(filter)}.`;
+                return;
+            }
+            emptyEl.style.display = 'none';
+
+            archived.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'archived-item';
+                item.innerHTML = `
+                    <div class="archived-item-info">
+                        <div class="archived-item-name">${escapeHtml(p.name)}</div>
+                        <div class="archived-item-meta">
+                            <span class="archived-badge ${p.type}">${getTypeLabel(p.type)}</span>
+                            ${p.archivedAt ? `<span class="archived-date">Eliminado el ${formatArchivedDate(p.archivedAt)}</span>` : ''}
+                        </div>
+                        ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" class="program-link"><i class="fas fa-external-link-alt"></i> Más información</a>` : ''}
+                    </div>
+                    <button type="button" class="btn btn-primary btn-restore" data-id="${escapeHtml(p.id)}" title="Devolver esta tarjeta a su categoría original">
+                        <i class="fas fa-trash-restore"></i> Restaurar
+                    </button>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Restaura un programa archivado: lo devuelve a su categoría original
+        function restoreArchivedProgram(archivedId) {
+            if (!isAdminUser()) return;
+            const archived = getArchivedPrograms().find(p => p.id === archivedId);
+            if (!archived) return;
+
+            const targetType = archived.type;
+
+            // No permitir duplicados de nombre en la categoría de destino
+            const duplicado = (programsData[targetType] || []).some(p =>
+                p.name.toLowerCase() === archived.name.toLowerCase()
+            );
+            if (duplicado) {
+                alert(`Ya existe un programa llamado "${archived.name}" en la categoría ${getTypeLabel(targetType)}.\n\nRenombre o elimine ese programa antes de restaurar la tarjeta archivada.`);
+                return;
+            }
+
+            if (!Array.isArray(programsData[targetType])) programsData[targetType] = [];
+
+            // Reutilizar el id original si está libre; si se ocupó mientras estaba
+            // archivado, generar uno nuevo (la participación se limpió al archivar)
+            let newId = archived.id;
+            const idOcupado = ['type-a', 'type-b', 'type-c'].some(t =>
+                (programsData[t] || []).some(p => p.id === newId)
+            );
+            if (idOcupado) newId = generateProgramId(targetType);
+
+            programsData[targetType].push({ id: newId, name: archived.name, url: archived.url || '' });
+
+            // Quitar del archivo
+            appState.archivedPrograms = getArchivedPrograms().filter(p => p.id !== archivedId);
+
+            saveData();
+            initPrograms();
+            renderArchivedPrograms();
+            showNotification(`Programa "${archived.name}" restaurado en ${getTypeLabel(targetType)}.`);
+        }
+
+        // Actualiza el contador de archivados en los botones de las categorías
+        function updateArchivedButtons() {
+            const total = getArchivedPrograms().length;
+            ['type-a', 'type-b', 'type-c'].forEach(type => {
+                const btn = document.getElementById(`view-archived-${type}`);
+                if (btn) btn.innerHTML = '<i class="fas fa-box-archive"></i> Programas archivados' + (total > 0 ? ' (' + total + ')' : '');
+            });
+        }
+
         function initEvents() {
             document.getElementById('close-modal').addEventListener('click', closeCoordinatorModal);
             document.getElementById('cancel-coordinator').addEventListener('click', closeCoordinatorModal);
+
+            // Gestión de programas (añadir / editar / eliminar tarjetas)
+            document.getElementById('close-program-modal').addEventListener('click', closeProgramModal);
+            document.getElementById('cancel-program-modal').addEventListener('click', closeProgramModal);
+            document.getElementById('program-form').addEventListener('submit', saveProgramFromModal);
+            ['type-a', 'type-b', 'type-c'].forEach(type => {
+                const addBtn = document.getElementById(`add-program-${type}`);
+                if (addBtn) addBtn.addEventListener('click', () => openProgramModal(type, null));
+            });
+
+            // Archivo de programas eliminados (restauración de tarjetas)
+            document.getElementById('close-archived-modal').addEventListener('click', closeArchivedModal);
+            document.getElementById('archived-filter-type').addEventListener('change', renderArchivedPrograms);
+            document.getElementById('archived-programs-list').addEventListener('click', function(e) {
+                const restoreBtn = e.target.closest('.btn-restore');
+                if (restoreBtn) restoreArchivedProgram(restoreBtn.getAttribute('data-id'));
+            });
+            ['type-a', 'type-b', 'type-c'].forEach(type => {
+                const archivedBtn = document.getElementById(`view-archived-${type}`);
+                if (archivedBtn) archivedBtn.addEventListener('click', () => openArchivedModal(type));
+            });
 
             document.getElementById('save-to-firebase').addEventListener('click', saveToFirebase);
             document.getElementById('load-from-firebase').addEventListener('click', loadFromFirebase);
@@ -3547,7 +4025,9 @@
                 teachers: appState.teachers,
                 aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || [],
-                dossierUrls: appState.dossierUrls || {}
+                dossierUrls: appState.dossierUrls || {},
+                programs: appState.programs || programsData,
+                archivedPrograms: Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : []
             };
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -3575,8 +4055,15 @@
                         teachers: normalizeTeachers(importedData.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(importedData.aytoProjects, selCourse),
                         coursesList: importedData.coursesList || [],
-                        dossierUrls: importedData.dossierUrls || {}
+                        dossierUrls: importedData.dossierUrls || {},
+                        programs: normalizePrograms(importedData.programs),
+                        // El archivo de eliminados se conserva si el JSON no lo trae (exportaciones antiguas)
+                        archivedPrograms: importedData.archivedPrograms !== undefined
+                            ? normalizeArchivedPrograms(importedData.archivedPrograms)
+                            : normalizeArchivedPrograms(appState.archivedPrograms)
                     };
+                    // Enlazar el catálogo de programas importado
+                    programsData = appState.programs;
                     // Asegurar datos para el curso activo
                     ensureActiveCourseData();
                     // Forzar URL del dossier bloqueado si existe
