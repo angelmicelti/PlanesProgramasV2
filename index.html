@@ -502,7 +502,7 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN/REGISTRO -->
+    <!-- PANTALLA DE LOGIN (sin autoregistro: las cuentas las crea el administrador) -->
     <div id="login-screen">
         <div class="login-card">
             <h2><i class="fas fa-graduation-cap"></i> IES Virgen de Villadiego</h2>
@@ -519,26 +519,7 @@
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
                 <div class="login-toggle">
-                    No tienes cuenta? <a id="show-register">Registrate aqui</a>
-                </div>
-            </div>
-            <div id="register-form-container" style="display: none;">
-                <div class="form-group">
-                    <label for="register-username">Usuario</label>
-                    <input type="text" id="register-username" class="form-control" placeholder="Elige un nombre de usuario" autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Contraseña</label>
-                    <input type="password" id="register-password" class="form-control" placeholder="Elige tu contraseña" autocomplete="new-password">
-                </div>
-                <div class="form-group">
-                    <label for="register-password2">Confirmar Contraseña</label>
-                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contraseña" autocomplete="new-password">
-                </div>
-                <button id="register-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
-                <div class="login-error" id="register-error"></div>
-                <div class="login-toggle">
-                    Ya tienes cuenta? <a id="show-login">Inicia sesion</a>
+                    El acceso a la aplicacion es personal. Las cuentas solo pueden ser creadas por el administrador.
                 </div>
             </div>
         </div>
@@ -939,7 +920,7 @@
                     </div>
                 </div>
 
-                <div class="modal-info">Usuarios registrados en el sistema. El primer usuario registrado es el administrador.</div>
+                <div class="modal-info">Usuarios con acceso a la aplicacion. Solo un administrador puede crear, modificar o eliminar cuentas (no hay autoregistro).</div>
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -1136,35 +1117,10 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        async function registerUser(username, password) {
-            username = username.trim().toLowerCase();
-            if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
-            if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
-            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
-
-            // Check if user already exists
-            const snapshot = await db.ref(USERS_PATH).once('value');
-            const users = snapshot.val() || {};
-
-            if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
-
-            // Si es el primer usuario registrado, se le da rol de admin automáticamente
-            const isFirstUser = Object.keys(users).length === 0;
-            const rol = isFirstUser ? 'admin' : 'usuario';
-
-            const hashedPw = await hashPassword(password);
-            await db.ref(`${USERS_PATH}/${username}`).set({
-                passwordHash: hashedPw,
-                rol: rol,
-                fechaRegistro: new Date().toISOString(),
-                fechaRegistroLocal: new Date().toLocaleString('es-ES')
-            });
-
-            if (isFirstUser) {
-                return { ok: true, msg: 'Primer usuario registrado. Se te ha asignado el rol de Administrador.', rol: rol };
-            }
-            return { ok: true, msg: 'Cuenta creada correctamente. Un administrador debe activarla.', rol: rol };
-        }
+        // NOTA: El autoregistro está deshabilitado. Las cuentas solo pueden ser
+        // creadas por un administrador desde el panel de "Gestion de Usuarios"
+        // (registerUserByAdmin). Se mantiene el usuario de solo lectura
+        // usuario/usuario para consulta.
 
         async function loginUser(username, password) {
             username = username.trim().toLowerCase();
@@ -1249,13 +1205,8 @@
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
             document.getElementById('login-error').textContent = '';
-            document.getElementById('register-username').value = '';
-            document.getElementById('register-password').value = '';
-            document.getElementById('register-password2').value = '';
-            document.getElementById('register-error').textContent = '';
             // Show login form
             document.getElementById('login-form-container').style.display = 'block';
-            document.getElementById('register-form-container').style.display = 'none';
             // Stop autosave and realtime sync
             stopAutoSave();
             stopRealtimeSync();
@@ -1307,18 +1258,6 @@
         function initAuthEvents() {
             if (authEventsInitialized) return; // Evitar listeners duplicados
             authEventsInitialized = true;
-            // Toggle login/register
-            document.getElementById('show-register').addEventListener('click', () => {
-                document.getElementById('login-form-container').style.display = 'none';
-                document.getElementById('register-form-container').style.display = 'block';
-                document.getElementById('login-error').textContent = '';
-            });
-            document.getElementById('show-login').addEventListener('click', () => {
-                document.getElementById('register-form-container').style.display = 'none';
-                document.getElementById('login-form-container').style.display = 'block';
-                document.getElementById('register-error').textContent = '';
-            });
-
             // Login
             document.getElementById('login-btn').addEventListener('click', async () => {
                 const username = document.getElementById('login-username').value;
@@ -1342,41 +1281,6 @@
             });
             document.getElementById('login-username').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') document.getElementById('login-password').focus();
-            });
-
-            // Allow Enter key on register
-            document.getElementById('register-password2').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') document.getElementById('register-btn').click();
-            });
-            document.getElementById('register-password').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') document.getElementById('register-password2').focus();
-            });
-            document.getElementById('register-username').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') document.getElementById('register-password').focus();
-            });
-
-            // Register
-            document.getElementById('register-btn').addEventListener('click', async () => {
-                const username = document.getElementById('register-username').value;
-                const password = document.getElementById('register-password').value;
-                const password2 = document.getElementById('register-password2').value;
-                const errorEl = document.getElementById('register-error');
-                errorEl.textContent = '';
-
-                if (password !== password2) { errorEl.textContent = 'Las contraseñas no coinciden.'; return; }
-                const result = await registerUser(username, password);
-                if (result.ok) {
-                    // Auto-login after registration
-                    const loginResult = await loginUser(username, password);
-                    if (loginResult.ok) {
-                        setUserLoggedIn(username.trim().toLowerCase(), loginResult.rol);
-                        await initAppAfterLogin();
-                        // If first user (admin), ensure default readonly user exists
-                        if (isAdminUser()) await ensureDefaultReadonlyUser();
-                    }
-                } else {
-                    errorEl.textContent = result.msg;
-                }
             });
 
             // Logout
