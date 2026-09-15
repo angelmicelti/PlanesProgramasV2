@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS: lectura de archivos Excel de Séneca (.xls/.xlsx) para importar profesorado -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -654,8 +656,8 @@
 
                     <div class="form-group">
                         <label for="teacher-file">Importar listado de profesorado:</label>
-                        <input type="file" id="teacher-file" class="form-control" accept=".txt,.csv">
-                        <small>Formatos aceptados: .txt, .csv</small>
+                        <input type="file" id="teacher-file" class="form-control" accept=".txt,.csv,.xls,.xlsx">
+                        <small>Formatos aceptados: .txt, .csv y Excel de Séneca (.xls, .xlsx)</small>
                     </div>
                     
                     <div class="form-group">
@@ -3153,15 +3155,25 @@
         function handleTeacherFile(event) {
             const file = event.target.files[0];
             if (!file) return;
+            const fileName = file.name.toLowerCase();
+            // Archivos de Séneca en formato Excel (.xls/.xlsx)
+            if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                handleSenecaExcelFile(file);
+                event.target.value = '';
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     let teachers = [];
                     const content = e.target.result;
-                    if (file.name.endsWith('.txt')) {
+                    if (fileName.endsWith('.txt')) {
                         teachers = parseTxtFile(content);
-                    } else if (file.name.endsWith('.csv')) {
+                    } else if (fileName.endsWith('.csv')) {
                         teachers = parseCsvFile(content);
+                    } else {
+                        alert('Formato de archivo no soportado.\nFormatos aceptados: .txt, .csv y Excel de Séneca (.xls, .xlsx).');
+                        return;
                     }
                     teachers = teachers.map(teacher => normalizeName(teacher));
                     const activeCourse = appState.selectedCourse || getCurrentCourse();
@@ -3200,6 +3212,193 @@
                 if (teacher) teachers.push(teacher);
             }
             return teachers;
+        }
+
+        // ================================================
+        // IMPORTACIÓN DE PROFESORADO DESDE SÉNECA (EXCEL)
+        // ================================================
+
+        // Importa el profesorado desde un archivo de Séneca en formato Excel
+        // (RelPerCen.xls u otro listado con la columna "Empleado/a")
+        function handleSenecaExcelFile(file) {
+            // El archivo se procesa en el navegador con la librería SheetJS
+            if (typeof XLSX === 'undefined') {
+                alert('No se ha podido cargar el módulo de lectura de Excel (SheetJS).\nCompruebe su conexión a Internet, recargue la página o importe el listado en formato .txt o .csv.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const result = parseSenecaExcel(e.target.result);
+                    if (!result) return; // El error ya se ha mostrado al usuario
+                    if (result.teachers.length === 0) {
+                        alert('No se ha encontrado ningún profesor válido en el archivo de Excel.');
+                        return;
+                    }
+
+                    const activeCourse = appState.selectedCourse || getCurrentCourse();
+                    if (!appState.teachers[activeCourse]) appState.teachers[activeCourse] = [];
+                    const existing = appState.teachers[activeCourse];
+
+                    // Si ya existe una lista, preguntar si se reemplaza o se combina
+                    let finalTeachers = result.teachers;
+                    let combinado = false;
+                    if (existing.length > 0) {
+                        const reemplazar = confirm(
+                            `El curso ${activeCourse} ya tiene ${existing.length} profesor(es) en la lista.\n\n` +
+                            `Pulse ACEPTAR para REEMPLAZARLA por los ${result.teachers.length} profesores del archivo de Séneca.\n` +
+                            `Pulse CANCELAR para COMBINAR ambas listas (se mantienen los actuales y se añaden los nuevos).`
+                        );
+                        if (!reemplazar) {
+                            finalTeachers = mergeTeacherLists(existing, result.teachers);
+                            combinado = true;
+                        }
+                    }
+
+                    appState.teachers[activeCourse] = finalTeachers;
+                    updateTeacherSelectors();
+                    saveData();
+
+                    let msg = `Se han importado ${result.teachers.length} profesores del archivo de Séneca en el curso ${activeCourse}.`;
+                    if (combinado) msg += `\n\nLista combinada: ${finalTeachers.length} profesores en total.`;
+                    if (result.excludedCese > 0) msg += `\n\nSe han excluido ${result.excludedCese} profesor(es) cuya fecha de cese es anterior al inicio del curso seleccionado.`;
+                    if (result.skippedRows > 0) msg += `\n${result.skippedRows} fila(s) del archivo no contienen un nombre válido ("Apellidos, Nombre") y no se han importado.`;
+                    alert(msg);
+                } catch (error) {
+                    alert('Error al procesar el archivo de Excel. Verifique que se trata de un listado de profesorado de Séneca (por ejemplo, RelPerCen.xls) válido.');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Analiza un archivo de Séneca (Excel) y extrae el listado de profesorado.
+        // Devuelve { teachers, excludedCese, skippedRows } o null si el archivo no es válido.
+        function parseSenecaExcel(arrayBuffer) {
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            // Buscar la hoja de personal de Séneca; si no existe, usar la primera
+            let sheetName = workbook.SheetNames.find(name => /personal/i.test(name));
+            if (!sheetName) sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            if (!sheet) {
+                alert('El archivo de Excel no contiene ninguna hoja con datos.');
+                return null;
+            }
+            // Convertir la hoja en filas de texto (raw: false respeta el formato visible en Excel)
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+            // Localizar la fila de cabecera y las columnas relevantes
+            const header = findSenecaHeader(rows);
+            if (!header) {
+                alert('No se ha encontrado la columna "Empleado/a" en el archivo.\nVerifique que se trata del listado de profesorado de Séneca (por ejemplo, RelPerCen.xls).');
+                return null;
+            }
+
+            const activeCourse = appState.selectedCourse || getCurrentCourse();
+            const courseStart = getCourseStartDate(activeCourse);
+
+            const teachers = [];
+            const seen = new Set();
+            let excludedCese = 0;
+            let skippedRows = 0;
+
+            for (let i = header.rowIndex + 1; i < rows.length; i++) {
+                const row = rows[i] || [];
+                const name = normalizeName(cellToText(row[header.nameCol]));
+                // Ignorar filas vacías o repeticiones de la cabecera
+                if (!name || /^empleado\b/i.test(name)) continue;
+                // El listado de Séneca usa el formato "Apellidos, Nombre"
+                if (!name.includes(',')) { skippedRows++; continue; }
+                // Excluir a quienes causaron baja antes del inicio del curso seleccionado
+                if (header.ceseCol !== -1) {
+                    const cese = parseSpanishDate(row[header.ceseCol]);
+                    if (cese && cese < courseStart) { excludedCese++; continue; }
+                }
+                // Evitar duplicados dentro del propio archivo
+                const key = name.toLowerCase();
+                if (seen.has(key)) continue;
+                seen.add(key);
+                teachers.push(name);
+            }
+
+            sortTeachersByName(teachers);
+            return { teachers, excludedCese, skippedRows };
+        }
+
+        // Convierte el valor de una celda de Excel en texto limpio
+        function cellToText(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).trim();
+        }
+
+        // Localiza la fila de cabecera del listado de Séneca y las columnas de interés.
+        // Devuelve { rowIndex, nameCol, ceseCol } o null si no hay columna "Empleado/a".
+        function findSenecaHeader(rows) {
+            const maxScan = Math.min(rows.length, 15);
+            for (let r = 0; r < maxScan; r++) {
+                const row = rows[r] || [];
+                for (let c = 0; c < row.length; c++) {
+                    const text = cellToText(row[c]).toLowerCase();
+                    if (/^empleado\b/.test(text)) {
+                        // Buscar también la columna de fecha de cese (si existe)
+                        let ceseCol = -1;
+                        for (let c2 = 0; c2 < row.length; c2++) {
+                            if (cellToText(row[c2]).toLowerCase().includes('cese')) { ceseCol = c2; break; }
+                        }
+                        return { rowIndex: r, nameCol: c, ceseCol: ceseCol };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Interpreta fechas en formato español dd/mm/yyyy (o fecha serial de Excel)
+        function parseSpanishDate(value) {
+            if (value === null || value === undefined || value === '') return null;
+            if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+            if (typeof value === 'number') {
+                // Fecha serial de Excel: días transcurridos desde el 30/12/1899
+                if (value < 20000 || value > 80000) return null;
+                const date = new Date(Math.round((value - 25569) * 86400000));
+                return isNaN(date.getTime()) ? null : date;
+            }
+            const match = String(value).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+            if (!match) return null;
+            let day = parseInt(match[1], 10);
+            let month = parseInt(match[2], 10);
+            let year = parseInt(match[3], 10);
+            if (year < 100) year += (year < 70 ? 2000 : 1900);
+            if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+            const date = new Date(year, month - 1, day);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        // Fecha de inicio de un curso académico (1 de septiembre del primer año)
+        function getCourseStartDate(course) {
+            const match = String(course || '').match(/^(\d{4})/);
+            const year = match ? parseInt(match[1], 10) : new Date().getFullYear();
+            return new Date(year, 8, 1);
+        }
+
+        // Combina dos listas de profesorado evitando duplicados
+        function mergeTeacherLists(existing, incoming) {
+            const result = existing.slice();
+            const seen = new Set(existing.map(t => t.toLowerCase()));
+            incoming.forEach(teacher => {
+                const key = teacher.toLowerCase();
+                if (!seen.has(key)) { seen.add(key); result.push(teacher); }
+            });
+            sortTeachersByName(result);
+            return result;
+        }
+
+        // Ordena una lista de profesorado alfabéticamente por apellidos y nombre
+        function sortTeachersByName(list) {
+            list.sort((a, b) => {
+                const [apA, nomA] = a.split(',').map(s => s.trim().toLowerCase());
+                const [apB, nomB] = b.split(',').map(s => s.trim().toLowerCase());
+                return apA.localeCompare(apB) || nomA.localeCompare(nomB);
+            });
         }
 
         function updateTeacherSelectors() {
