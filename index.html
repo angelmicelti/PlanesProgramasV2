@@ -70,6 +70,16 @@
         .back-btn { background: var(--gray); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition); margin-bottom: 20px; }
         .back-btn:hover { background: var(--dark); }
 
+        /* ----- NAVEGACIÓN ENTRE SUBPANTALLAS (Tipos A/B/C) ----- */
+        .page-nav-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .page-nav-bar .back-btn { margin-bottom: 0; }
+        .type-switch-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .type-switch-btn { flex: 0 0 auto; padding: 10px 18px; font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
+        .type-switch-btn.switch-a { background: var(--primary); }
+        .type-switch-btn.switch-b { background: var(--secondary); }
+        .type-switch-btn.switch-c { background: var(--accent); }
+        .type-switch-btn:hover { filter: brightness(1.15); }
+
         .programs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .program-card { background: white; border-radius: 10px; padding: 20px; box-shadow: var(--shadow); transition: var(--transition); position: relative; overflow: hidden; }
         .program-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
@@ -250,6 +260,9 @@
             nav { flex-direction: column; }
             .programs-grid { grid-template-columns: 1fr; }
             .action-buttons { flex-direction: column; }
+            .page-nav-bar { flex-direction: column; align-items: stretch; }
+            .type-switch-group { width: 100%; }
+            .type-switch-btn { flex: 1; }
         }
 
         .ayto-header { background: linear-gradient(135deg, var(--ayto-color), #b84ccf); color: white; padding: 30px 0; text-align: center; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 30px; }
@@ -765,9 +778,19 @@
 
         <!-- PÁGINAS DE PROGRAMAS POR TIPO -->
         <div id="type-a" class="page">
-            <button class="back-btn" data-page="home">
-                <i class="fas fa-arrow-left"></i> Volver al Inicio
-            </button>
+            <div class="page-nav-bar">
+                <button class="back-btn" data-page="home">
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
+                </button>
+                <div class="type-switch-group">
+                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
+                        <i class="fas fa-list"></i> Planes Tipo B
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
+                        <i class="fas fa-list"></i> Planes Tipo C
+                    </button>
+                </div>
+            </div>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-a"><i class="fas fa-box-archive"></i> Programas archivados</button>
@@ -777,9 +800,19 @@
         </div>
 
         <div id="type-b" class="page">
-            <button class="back-btn" data-page="home">
-                <i class="fas fa-arrow-left"></i> Volver al Inicio
-            </button>
+            <div class="page-nav-bar">
+                <button class="back-btn" data-page="home">
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
+                </button>
+                <div class="type-switch-group">
+                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
+                        <i class="fas fa-list"></i> Planes Tipo A
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
+                        <i class="fas fa-list"></i> Planes Tipo C
+                    </button>
+                </div>
+            </div>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-b"><i class="fas fa-box-archive"></i> Programas archivados</button>
@@ -789,9 +822,19 @@
         </div>
 
         <div id="type-c" class="page">
-            <button class="back-btn" data-page="home">
-                <i class="fas fa-arrow-left"></i> Volver al Inicio
-            </button>
+            <div class="page-nav-bar">
+                <button class="back-btn" data-page="home">
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
+                </button>
+                <div class="type-switch-group">
+                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
+                        <i class="fas fa-list"></i> Planes Tipo A
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
+                        <i class="fas fa-list"></i> Planes Tipo B
+                    </button>
+                </div>
+            </div>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-c"><i class="fas fa-box-archive"></i> Programas archivados</button>
