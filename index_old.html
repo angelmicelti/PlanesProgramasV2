@@ -16,8 +16,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <!-- SheetJS: lectura de archivos Excel de Séneca (.xls/.xlsx) para importar profesorado -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -70,17 +68,6 @@
         .back-btn { background: var(--gray); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition); margin-bottom: 20px; }
         .back-btn:hover { background: var(--dark); }
 
-        /* ----- NAVEGACIÓN ENTRE SUBPANTALLAS (Tipos A/B/C) ----- */
-        .page-nav-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-        .page-nav-bar .back-btn { margin-bottom: 0; }
-        .type-switch-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        .type-switch-btn { flex: 0 0 auto; padding: 10px 18px; font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
-        .type-switch-btn.switch-a { background: var(--primary); }
-        .type-switch-btn.switch-b { background: var(--secondary); }
-        .type-switch-btn.switch-c { background: var(--accent); }
-        .type-switch-btn:hover { filter: brightness(1.15); }
-        .type-switch-btn.switch-ayto { background: var(--ayto-color); }
-
         .programs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .program-card { background: white; border-radius: 10px; padding: 20px; box-shadow: var(--shadow); transition: var(--transition); position: relative; overflow: hidden; }
         .program-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
@@ -88,44 +75,6 @@
         .program-card.type-b { border-left: 4px solid var(--secondary); background-color: rgba(0, 146, 70, 0.05); }
         .program-card.type-c { border-left: 4px solid var(--accent); background-color: rgba(255, 102, 0, 0.05); }
         .program-card.type-ayto { border-left: 4px solid var(--ayto-color); background-color: rgba(156, 39, 176, 0.05); }
-
-        /* ----- ACCIONES DE EDICIÓN EN TARJETAS DE PROGRAMA ----- */
-        .program-actions { display: flex; gap: 4px; flex-shrink: 0; align-self: flex-start; }
-        .program-actions .btn-sm { border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: var(--transition); }
-        .program-actions .btn-sm.edit { background: #2196F3; color: white; }
-        .program-actions .btn-sm.delete { background: var(--danger); color: white; }
-        .program-actions .btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
-        .program-actions .btn-sm.move { background: #607D8B; color: white; width: 26px; height: 26px; font-size: 0.7rem; }
-        .program-actions .btn-sm.move:hover { background: #455A64; }
-
-        /* ----- REORDENACIÓN DE TARJETAS (orden del dossier) ----- */
-        .program-card[draggable="true"] { cursor: grab; }
-        .program-card.dragging { opacity: 0.45; }
-        .program-card.drag-over { outline: 2px dashed var(--primary); outline-offset: 3px; }
-
-        /* ----- CONTADORES DE PLANES EN DESARROLLO (títulos, home y total) ----- */
-        .page-title .count-chip { background: var(--primary); color: white; font-size: 0.72rem; font-weight: 700; padding: 5px 14px; border-radius: 999px; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); flex-shrink: 0; }
-        .page-title .count-chip.chip-b { background: var(--secondary); }
-        .page-title .count-chip.chip-c { background: var(--accent); }
-        .page-title .count-chip.chip-ayto { background: var(--ayto-color); }
-        .page-title .home-total-count { color: var(--primary); background: rgba(0, 85, 164, 0.08); border-radius: 999px; padding: 3px 12px; font-size: 0.8em; font-weight: 700; }
-        .action-buttons .nav-btn .btn-count { background: rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 2px 10px; font-size: 0.85em; font-weight: 700; flex-shrink: 0; }
-        .add-program-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
-
-        /* ----- ARCHIVO DE PROGRAMAS ELIMINADOS (restauración de tarjetas) ----- */
-        .archived-hint { font-size: 0.88rem; color: #555; margin-bottom: 10px; line-height: 1.4; }
-        .archived-programs-list { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 4px; }
-        .archived-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; flex-wrap: wrap; }
-        .archived-item-name { font-weight: 600; color: var(--primary); font-size: 0.98rem; }
-        .archived-item-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
-        .archived-badge { padding: 2px 9px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; color: white; }
-        .archived-badge.type-a { background: var(--primary); }
-        .archived-badge.type-b { background: var(--secondary); }
-        .archived-badge.type-c { background: var(--accent); }
-        .archived-date { font-size: 0.78rem; color: #777; }
-        .archived-item .program-link { margin-top: 4px; font-size: 0.82rem; }
-        #archived-programs-empty { text-align: center; color: #777; padding: 26px 10px; font-size: 0.92rem; line-height: 1.5; }
-        .btn-restore { white-space: nowrap; }
 
         .program-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
         .program-name { font-weight: 600; color: var(--primary); font-size: 1.1rem; margin-bottom: 5px; }
@@ -276,9 +225,6 @@
             nav { flex-direction: column; }
             .programs-grid { grid-template-columns: 1fr; }
             .action-buttons { flex-direction: column; }
-            .page-nav-bar { flex-direction: column; align-items: stretch; }
-            .type-switch-group { width: 100%; }
-            .type-switch-btn { flex: 1; }
         }
 
         .ayto-header { background: linear-gradient(135deg, var(--ayto-color), #b84ccf); color: white; padding: 30px 0; text-align: center; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 30px; }
@@ -501,12 +447,6 @@
             font-size: 0.8rem; transition: var(--transition); display: none;
         }
         #admin-users-btn:hover { background: rgba(255,255,255,0.35); }
-        #manual-btn {
-            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
-            color: white; padding: 4px 10px; border-radius: 20px; cursor: pointer;
-            font-size: 0.8rem; transition: var(--transition);
-        }
-        #manual-btn:hover { background: rgba(255,255,255,0.35); }
 
         /* Tabla de usuarios en modal admin */
         .users-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -560,7 +500,7 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN (sin autoregistro: las cuentas las crea el administrador) -->
+    <!-- PANTALLA DE LOGIN/REGISTRO -->
     <div id="login-screen">
         <div class="login-card">
             <h2><i class="fas fa-graduation-cap"></i> IES Virgen de Villadiego</h2>
@@ -577,7 +517,26 @@
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
                 <div class="login-toggle">
-                    El acceso a la aplicacion es personal. Las cuentas solo pueden ser creadas por el administrador.
+                    No tienes cuenta? <a id="show-register">Registrate aqui</a>
+                </div>
+            </div>
+            <div id="register-form-container" style="display: none;">
+                <div class="form-group">
+                    <label for="register-username">Usuario</label>
+                    <input type="text" id="register-username" class="form-control" placeholder="Elige un nombre de usuario" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" class="form-control" placeholder="Elige tu contraseña" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="register-password2">Confirmar Contraseña</label>
+                    <input type="password" id="register-password2" class="form-control" placeholder="Repite la contraseña" autocomplete="new-password">
+                </div>
+                <button id="register-btn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Crear Cuenta</button>
+                <div class="login-error" id="register-error"></div>
+                <div class="login-toggle">
+                    Ya tienes cuenta? <a id="show-login">Inicia sesion</a>
                 </div>
             </div>
         </div>
@@ -620,7 +579,6 @@
                     <span class="user-name" id="display-username"></span>
                     <span class="user-role" id="display-role"></span>
                     <span class="readonly-badge" id="readonly-badge"><i class="fas fa-eye"></i> Solo lectura</span>
-                    <button id="manual-btn" title="Descargar manual de uso"><i class="fas fa-book-open"></i></button>
                     <button id="admin-users-btn" title="Gestionar usuarios"><i class="fas fa-users-cog"></i></button>
                     <button id="logout-btn" title="Cerrar sesion"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -642,21 +600,21 @@
     <div class="container">
         <!-- PÁGINA DE INICIO -->
         <div id="home" class="page active">
-            <h2 class="page-title"><i class="fas fa-home"></i> Portal de Programas Educativos <span id="home-total-count" class="home-total-count"></span></h2>
+            <h2 class="page-title"><i class="fas fa-home"></i> Portal de Programas Educativos</h2>
             <p>Seleccione el tipo de programa para gestionar la participación del IES:</p>
             
             <div class="action-buttons" style="margin-top: 30px;">
                 <button class="nav-btn" data-page="type-a" style="background: var(--primary); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo A <br> Participación de oficio <span id="home-count-type-a" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo A <br> Participación de oficio
                 </button>
                 <button class="nav-btn" data-page="type-b" style="background: var(--secondary); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo B <br> Convocatoria general <span id="home-count-type-b" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo B <br> Convocatoria general
                 </button>
                 <button class="nav-btn" data-page="type-c" style="background: var(--accent); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo C <br> Convocatoria específica <span id="home-count-type-c" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo C <br> Convocatoria específica
                 </button>
                 <button class="nav-btn" data-page="ayto-projects" style="background: var(--ayto-color); color: white;">
-                    <i class="fas fa-city"></i> Proyectos <br> Ayuntamiento <span id="home-count-ayto" class="btn-count"></span>
+                    <i class="fas fa-city"></i> Proyectos <br> Ayuntamiento
                 </button>
             </div>
 
@@ -696,8 +654,8 @@
 
                     <div class="form-group">
                         <label for="teacher-file">Importar listado de profesorado:</label>
-                        <input type="file" id="teacher-file" class="form-control" accept=".txt,.csv,.xls,.xlsx">
-                        <small>Formatos aceptados: .txt, .csv y Excel de Séneca (.xls, .xlsx)</small>
+                        <input type="file" id="teacher-file" class="form-control" accept=".txt,.csv">
+                        <small>Formatos aceptados: .txt, .csv</small>
                     </div>
                     
                     <div class="form-group">
@@ -801,99 +759,35 @@
 
         <!-- PÁGINAS DE PROGRAMAS POR TIPO -->
         <div id="type-a" class="page">
-            <div class="page-nav-bar">
-                <button class="back-btn" data-page="home">
-                    <i class="fas fa-arrow-left"></i> Volver al Inicio
-                </button>
-                <div class="type-switch-group">
-                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
-                        <i class="fas fa-list"></i> Planes Tipo B
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
-                        <i class="fas fa-list"></i> Planes Tipo C
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
-                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
-                    </button>
-                </div>
-            </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio <span id="page-count-type-a" class="count-chip chip-a"></span></h2>
-            <div class="add-program-bar admin-only flex-row">
-                <button type="button" class="btn btn-secondary" id="view-archived-type-a"><i class="fas fa-box-archive"></i> Programas archivados</button>
-                <button type="button" class="btn btn-primary" id="add-program-type-a"><i class="fas fa-plus"></i> Añadir programa</button>
-            </div>
+            <button class="back-btn" data-page="home">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </button>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio</h2>
             <div class="programs-grid" id="programs-type-a"></div>
         </div>
 
         <div id="type-b" class="page">
-            <div class="page-nav-bar">
-                <button class="back-btn" data-page="home">
-                    <i class="fas fa-arrow-left"></i> Volver al Inicio
-                </button>
-                <div class="type-switch-group">
-                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
-                        <i class="fas fa-list"></i> Planes Tipo A
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
-                        <i class="fas fa-list"></i> Planes Tipo C
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
-                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
-                    </button>
-                </div>
-            </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general <span id="page-count-type-b" class="count-chip chip-b"></span></h2>
-            <div class="add-program-bar admin-only flex-row">
-                <button type="button" class="btn btn-secondary" id="view-archived-type-b"><i class="fas fa-box-archive"></i> Programas archivados</button>
-                <button type="button" class="btn btn-primary" id="add-program-type-b"><i class="fas fa-plus"></i> Añadir programa</button>
-            </div>
+            <button class="back-btn" data-page="home">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </button>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general</h2>
             <div class="programs-grid" id="programs-type-b"></div>
         </div>
 
         <div id="type-c" class="page">
-            <div class="page-nav-bar">
-                <button class="back-btn" data-page="home">
-                    <i class="fas fa-arrow-left"></i> Volver al Inicio
-                </button>
-                <div class="type-switch-group">
-                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
-                        <i class="fas fa-list"></i> Planes Tipo A
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
-                        <i class="fas fa-list"></i> Planes Tipo B
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
-                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
-                    </button>
-                </div>
-            </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica <span id="page-count-type-c" class="count-chip chip-c"></span></h2>
-            <div class="add-program-bar admin-only flex-row">
-                <button type="button" class="btn btn-secondary" id="view-archived-type-c"><i class="fas fa-box-archive"></i> Programas archivados</button>
-                <button type="button" class="btn btn-primary" id="add-program-type-c"><i class="fas fa-plus"></i> Añadir programa</button>
-            </div>
+            <button class="back-btn" data-page="home">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </button>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica</h2>
             <div class="programs-grid" id="programs-type-c"></div>
         </div>
         
         <!-- PÁGINA DE PROYECTOS DEL AYUNTAMIENTO (dinámico) -->
         <div id="ayto-projects" class="page">
-            <div class="page-nav-bar">
-                <button class="back-btn" data-page="home">
-                    <i class="fas fa-arrow-left"></i> Volver al Inicio
-                </button>
-                <div class="type-switch-group">
-                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
-                        <i class="fas fa-list"></i> Planes Tipo A
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
-                        <i class="fas fa-list"></i> Planes Tipo B
-                    </button>
-                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
-                        <i class="fas fa-list"></i> Planes Tipo C
-                    </button>
-                </div>
-            </div>
-            <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento <span id="page-count-ayto" class="count-chip chip-ayto"></span></h2>
+            <button class="back-btn" data-page="home">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </button>
+            <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento</h2>
             <div class="ayto-header">
                 <div class="container">
                     <h1 class="ayto-title">Proyectos en colaboración con el Área de Juventud del Ayuntamiento de Peñaflor</h1>
@@ -1043,7 +937,7 @@
                     </div>
                 </div>
 
-                <div class="modal-info">Usuarios con acceso a la aplicacion. Solo un administrador puede crear, modificar o eliminar cuentas (no hay autoregistro).</div>
+                <div class="modal-info">Usuarios registrados en el sistema. El primer usuario registrado es el administrador.</div>
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -1095,67 +989,6 @@
         </div>
     </div>
     
-    <!-- MODAL PROGRAMA (añadir / editar) -->
-    <div id="modal-program" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><span class="title-icon"><i class="fas fa-clipboard-list"></i></span> <span id="program-modal-title-text">Nuevo programa</span></h3>
-                <button type="button" class="close-btn" id="close-program-modal">Cerrar</button>
-            </div>
-            <form id="program-form">
-                <div class="modal-body">
-                    <input type="hidden" id="program-modal-program-id">
-                    <input type="hidden" id="program-modal-original-type">
-                    <div class="form-group">
-                        <label for="program-modal-name">Nombre del programa: *</label>
-                        <input type="text" id="program-modal-name" class="form-control" placeholder="Nombre del programa" autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label for="program-modal-url">URL de información (opcional):</label>
-                        <input type="text" id="program-modal-url" class="form-control" placeholder="https://www.juntadeandalucia.es/..." autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label for="program-modal-type">Categoría:</label>
-                        <select id="program-modal-type" class="form-control">
-                            <option value="type-a">Tipo A - Participación de oficio</option>
-                            <option value="type-b">Tipo B - Convocatoria general</option>
-                            <option value="type-c">Tipo C - Convocatoria específica</option>
-                        </select>
-                    </div>
-                    <div id="program-modal-error" style="color: var(--danger); font-size: 0.85rem; margin-top: 8px; min-height: 18px;"></div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancel-program-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL PROGRAMAS ARCHIVADOS (tarjetas de programas eliminadas) -->
-    <div id="modal-archived-programs" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><span class="title-icon"><i class="fas fa-box-archive"></i></span> Programas archivados</h3>
-                <button type="button" class="close-btn" id="close-archived-modal">Cerrar</button>
-            </div>
-            <div class="modal-body">
-                <p class="archived-hint">Las tarjetas de programas que se eliminan quedan guardadas aquí. Puede restaurarlas en su categoría original cuando vuelva a necesitarlas.</p>
-                <div class="form-group">
-                    <label for="archived-filter-type">Filtrar por categoría:</label>
-                    <select id="archived-filter-type" class="form-control">
-                        <option value="all">Todas las categorías</option>
-                        <option value="type-a">Tipo A - Participación de oficio</option>
-                        <option value="type-b">Tipo B - Convocatoria general</option>
-                        <option value="type-c">Tipo C - Convocatoria específica</option>
-                    </select>
-                </div>
-                <div id="archived-programs-list" class="archived-programs-list"></div>
-                <div id="archived-programs-empty" style="display: none;"></div>
-            </div>
-        </div>
-    </div>
-
     <footer>
         <div class="container">
             <p> Ángel Millán León - 2025</p>
@@ -1174,7 +1007,6 @@
             teachers: {},        // Objeto indexado por curso: { '2025-2026': ['Prof1', ...], ... }
             aytoProjects: {},    // Objeto indexado por curso: { '2025-2026': [...], ... }
             coursesList: [],
-            archivedPrograms: [],  // Tarjetas de programas eliminadas (guardadas para poder restaurarlas)
             dossierUrls: {
                 '2025-2026': 'https://www.juntadeandalucia.es/educacion/portales/documents/20123/2475523/17092025_dosier_programas_educativos.pdf/4272f22a-ec05-b29c-e75a-0e16ded1faf2?t=1758094184028'
             }
@@ -1240,11 +1072,9 @@
         let syncDebounceTimer = null;      // Timer para debuncar escrituras Firebase
         let lastRemoteDataHash = '';       // Hash del último dato remoto (evitar re-render innecesario)
         const SYNC_DEBOUNCE_MS = 1500;     // Espera antes de enviar cambios a Firebase
-        let firebaseInitialLoadDone = false; // true tras la primera lectura exitosa de Firebase (antes no se escribe)
-        let lastSyncedDataHash = '';        // hash del último estado sincronizado (evita escrituras y snapshots innecesarios)
 
-        // Catálogo de programas por defecto (plantilla inicial oficial)
-        const defaultProgramsData = {
+        // Datos de los programas
+        const programsData = {
             'type-a': [
                 { id: 'a1', name: 'Bienestar Emocional', url: 'https://www.juntadeandalucia.es/educacion/portales/web/planes-y-programas/programas-desarrollo-educativo/bienestar-emocional/presentacion' },
                 { id: 'a2', name: 'Bibliotecas Escolares', url: 'https://www.juntadeandalucia.es/educacion/eaprendizaje/programa-bibliotecas-escolares/' },
@@ -1288,11 +1118,6 @@
             ]
         };
 
-        // Catálogo de programas en uso (editable por el administrador).
-        // Se mantiene enlazado (mismo objeto) con appState.programs para
-        // persistir en localStorage, Firebase y JSON de exportación/importación.
-        let programsData = JSON.parse(JSON.stringify(defaultProgramsData));
-
         // ================================================
         // Estado de sesión del usuario
         let currentUser = null; // { username, rol }
@@ -1309,10 +1134,35 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // NOTA: El autoregistro está deshabilitado. Las cuentas solo pueden ser
-        // creadas por un administrador desde el panel de "Gestion de Usuarios"
-        // (registerUserByAdmin). Se mantiene el usuario de solo lectura
-        // usuario/usuario para consulta.
+        async function registerUser(username, password) {
+            username = username.trim().toLowerCase();
+            if (!username || username.length < 3) return { ok: false, msg: 'El usuario debe tener al menos 3 caracteres.' };
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'El usuario solo puede contener letras, numeros y guiones bajos.' };
+            if (password.length < 4) return { ok: false, msg: 'La contraseña debe tener al menos 4 caracteres.' };
+
+            // Check if user already exists
+            const snapshot = await db.ref(USERS_PATH).once('value');
+            const users = snapshot.val() || {};
+
+            if (users[username]) return { ok: false, msg: 'Este nombre de usuario ya existe.' };
+
+            // Si es el primer usuario registrado, se le da rol de admin automáticamente
+            const isFirstUser = Object.keys(users).length === 0;
+            const rol = isFirstUser ? 'admin' : 'usuario';
+
+            const hashedPw = await hashPassword(password);
+            await db.ref(`${USERS_PATH}/${username}`).set({
+                passwordHash: hashedPw,
+                rol: rol,
+                fechaRegistro: new Date().toISOString(),
+                fechaRegistroLocal: new Date().toLocaleString('es-ES')
+            });
+
+            if (isFirstUser) {
+                return { ok: true, msg: 'Primer usuario registrado. Se te ha asignado el rol de Administrador.', rol: rol };
+            }
+            return { ok: true, msg: 'Cuenta creada correctamente. Un administrador debe activarla.', rol: rol };
+        }
 
         async function loginUser(username, password) {
             username = username.trim().toLowerCase();
@@ -1397,8 +1247,13 @@
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
             document.getElementById('login-error').textContent = '';
+            document.getElementById('register-username').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-password2').value = '';
+            document.getElementById('register-error').textContent = '';
             // Show login form
             document.getElementById('login-form-container').style.display = 'block';
+            document.getElementById('register-form-container').style.display = 'none';
             // Stop autosave and realtime sync
             stopAutoSave();
             stopRealtimeSync();
@@ -1450,6 +1305,18 @@
         function initAuthEvents() {
             if (authEventsInitialized) return; // Evitar listeners duplicados
             authEventsInitialized = true;
+            // Toggle login/register
+            document.getElementById('show-register').addEventListener('click', () => {
+                document.getElementById('login-form-container').style.display = 'none';
+                document.getElementById('register-form-container').style.display = 'block';
+                document.getElementById('login-error').textContent = '';
+            });
+            document.getElementById('show-login').addEventListener('click', () => {
+                document.getElementById('register-form-container').style.display = 'none';
+                document.getElementById('login-form-container').style.display = 'block';
+                document.getElementById('register-error').textContent = '';
+            });
+
             // Login
             document.getElementById('login-btn').addEventListener('click', async () => {
                 const username = document.getElementById('login-username').value;
@@ -1473,6 +1340,41 @@
             });
             document.getElementById('login-username').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') document.getElementById('login-password').focus();
+            });
+
+            // Allow Enter key on register
+            document.getElementById('register-password2').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-btn').click();
+            });
+            document.getElementById('register-password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-password2').focus();
+            });
+            document.getElementById('register-username').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('register-password').focus();
+            });
+
+            // Register
+            document.getElementById('register-btn').addEventListener('click', async () => {
+                const username = document.getElementById('register-username').value;
+                const password = document.getElementById('register-password').value;
+                const password2 = document.getElementById('register-password2').value;
+                const errorEl = document.getElementById('register-error');
+                errorEl.textContent = '';
+
+                if (password !== password2) { errorEl.textContent = 'Las contraseñas no coinciden.'; return; }
+                const result = await registerUser(username, password);
+                if (result.ok) {
+                    // Auto-login after registration
+                    const loginResult = await loginUser(username, password);
+                    if (loginResult.ok) {
+                        setUserLoggedIn(username.trim().toLowerCase(), loginResult.rol);
+                        await initAppAfterLogin();
+                        // If first user (admin), ensure default readonly user exists
+                        if (isAdminUser()) await ensureDefaultReadonlyUser();
+                    }
+                } else {
+                    errorEl.textContent = result.msg;
+                }
             });
 
             // Logout
@@ -1826,8 +1728,6 @@
                 aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || [],
                 dossierUrls: appState.dossierUrls || {},
-                programs: appState.programs || programsData,
-                archivedPrograms: Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : [],
                 lastModifiedBy: currentUser ? currentUser.username : 'unknown',
                 lastModifiedAt: new Date().toISOString()
             };
@@ -1845,35 +1745,18 @@
                 s: data.selectedCourse,
                 a: data.aytoProjects,
                 c: data.coursesList,
-                d: data.dossierUrls,
-                g: data.programs,
-                r: data.archivedPrograms
+                d: data.dossierUrls
             });
         }
 
-        // Guarda los datos actuales en Firebase (escritura directa).
-        // PROTECCIONES:
-        //  1) No se escribe nada hasta completar la primera lectura de Firebase
-        //     (evita que un estado local obsoleto destruya datos más recientes).
-        //  2) Si el estado no ha cambiado desde la última sincronización, se
-        //     omite la escritura (y el snapshot de historial correspondiente).
+        // Guarda los datos actuales en Firebase (escritura directa)
         async function saveToFirebase() {
             if (!isAdminUser()) return;
-            if (!firebaseInitialLoadDone) {
-                console.log('saveToFirebase omitido: la carga inicial de Firebase no ha terminado todavía');
-                return;
-            }
             try {
-                const data = getAppDataForFirebase();
-                const localHash = simpleDataHash(data);
-                if (localHash === lastSyncedDataHash) {
-                    updateSyncIndicator('synced');
-                    return;
-                }
                 isLocalSave = true;
                 updateSyncIndicator('syncing');
+                const data = getAppDataForFirebase();
                 await db.ref(`${FIREBASE_PATH}/datos`).set(data);
-                lastSyncedDataHash = localHash;
 
                 // Guardar entrada en historial (solo si no es auto-guardado excesivo)
                 const now = Date.now();
@@ -1910,46 +1793,8 @@
             }, SYNC_DEBOUNCE_MS);
         }
 
-        // ¿Tiene datos con valor la participación de un curso?
-        // (al menos un programa con participación marcada)
-        function courseHasParticipationData(courseData) {
-            if (!courseData || typeof courseData !== 'object') return false;
-            return Object.keys(courseData).some(function(k) {
-                return courseData[k] && typeof courseData[k] === 'object' && courseData[k].participates;
-            });
-        }
-
-        // Fusiona los mapas indexados por curso: el dato remoto manda en los cursos
-        // que incluye, pero se CONSERVAN los cursos locales con datos que el remoto
-        // no trae. Evita que un cliente desactualizado (pestaña antigua o versión
-        // vieja de la app) borre del servidor cursos completos al sobrescribir.
-        function mergePerCourseMaps(remoteMap, localMap, courseHasData) {
-            if (!localMap || typeof localMap !== 'object') return { merged: remoteMap, preserved: [] };
-            const merged = Object.assign({}, remoteMap);
-            const preserved = [];
-            Object.keys(localMap).forEach(function(course) {
-                if (merged[course] === undefined && courseHasData(localMap[course])) {
-                    merged[course] = localMap[course];
-                    preserved.push(course);
-                }
-            });
-            return { merged: merged, preserved: preserved };
-        }
-
-        // Función compartida para aplicar datos de Firebase al estado de la app.
-        // Opciones (opts):
-        //   mergeCourses (defecto true): conserva los cursos locales con datos que
-        //     el dato remoto no incluye (protección anti-borrado). Las restauraciones
-        //     explícitas de copias de seguridad usan false para respetar la copia.
-        //   markSynced (defecto true): registra el hash del dato recibido como
-        //     estado del servidor (si el local difiere, el siguiente guardado repara).
-        function applyFirebaseData(data, opts) {
-            opts = opts || {};
-            const mergeCourses = opts.mergeCourses !== false;
-            // Copias de los mapas por curso ANTES de sobrescribirlos (para la fusión)
-            const prevParticipation = appState.participation || {};
-            const prevTeachers = appState.teachers || {};
-            const prevAytoProjects = appState.aytoProjects || {};
+        // Función compartida para aplicar datos de Firebase al estado de la app
+        function applyFirebaseData(data) {
             // IMPORTANTE: leer selectedCourse ANTES de normalizar
             appState.selectedCourse = data.selectedCourse || getCurrentCourse();
             // Forzar curso actual para usuario (solo puede ver el curso vigente)
@@ -1958,27 +1803,8 @@
             }
             appState.participation = normalizeParticipation(data.participation, appState.selectedCourse);
             appState.teachers = normalizeTeachers(data.teachers, appState.selectedCourse);
-            appState.programs = normalizePrograms(data.programs);
-            programsData = appState.programs;
-            // Archivo de programas eliminados: si el dato remoto no incluye la clave
-            // (backups antiguos o clientes sin esta función), se conserva el actual
-            if (data && data.archivedPrograms !== undefined) {
-                appState.archivedPrograms = normalizeArchivedPrograms(data.archivedPrograms);
-            }
             ensureActiveCourseData();
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
-            // Protección de datos por curso: si el dato recibido no incluye un curso
-            // que localmente sí tiene datos, se conserva el dato local
-            let preservedCourses = [];
-            if (mergeCourses) {
-                const resPart = mergePerCourseMaps(appState.participation, prevParticipation, courseHasParticipationData);
-                const resTeach = mergePerCourseMaps(appState.teachers, prevTeachers, function(t) { return Array.isArray(t) && t.length > 0; });
-                const resAyto = mergePerCourseMaps(appState.aytoProjects, prevAytoProjects, function(a) { return Array.isArray(a) && a.length > 0; });
-                appState.participation = resPart.merged;
-                appState.teachers = resTeach.merged;
-                appState.aytoProjects = resAyto.merged;
-                preservedCourses = Array.from(new Set([].concat(resPart.preserved, resTeach.preserved, resAyto.preserved)));
-            }
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
             if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
             // Forzar URL del dossier bloqueado
@@ -1988,28 +1814,11 @@
             localStorage.setItem('programsAppData', JSON.stringify(appState));
             updateTeacherSelectors();
             initPrograms();
-            // Si el modal del archivo está abierto, refrescar su lista con lo recibido
-            if (document.getElementById('modal-archived-programs').classList.contains('active')) renderArchivedPrograms();
             renderAytoProjects();
             renderCourses();
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
             updateDossierButton();
             syncAytoCourse();
-            if (preservedCourses.length > 0) {
-                console.warn('Cursos conservados localmente (no venían en los datos recibidos):', preservedCourses.join(', '));
-                showNotification('Se han conservado los datos locales de: ' + preservedCourses.join(', ') + ' (no venían en los datos recibidos)', 'info');
-                // El servidor ha perdido cursos con datos: el estado local
-                // fusionado difiere del dato recibido, así que se programa su
-                // subida para reparar el servidor.
-                debouncedSaveToFirebase();
-            }
-            if (opts.markSynced !== false) {
-                // El hash de sincronización refleja el estado del SERVIDOR tal
-                // y como se ha recibido (no el estado local normalizado o
-                // fusionado): si el local difiere, el siguiente guardado
-                // repara el servidor; si coincide, no se escribe nada.
-                lastSyncedDataHash = simpleDataHash(data);
-            }
             saveLastUpdate('firebase');
         }
 
@@ -2070,32 +1879,17 @@
             }
         }
 
-        // Carga inicial desde Firebase (una vez, al arrancar). Si falla se
-        // reintenta en segundo plano: hasta que la primera lectura no se haya
-        // completado, la app no escribe en Firebase (ver saveToFirebase).
-        async function loadInitialData(retrySilently) {
-            if (!retrySilently) blockInterface('Conectando con Firebase...');
-            else updateSyncIndicator('syncing');
+        // Carga inicial desde Firebase (una vez, al arrancar)
+        async function loadInitialData() {
+            blockInterface('Conectando con Firebase...');
             try {
                 const snapshot = await db.ref(`${FIREBASE_PATH}/datos`).once('value');
-                // Lectura completada: a partir de ahora se permiten escrituras
-                firebaseInitialLoadDone = true;
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.participation !== undefined && data.teachers !== undefined) {
-                        // En un reintento, si hay cambios locales aún no sincronizados
-                        // (p. ej. editados sin conexión), no se sobrescriben: se
-                        // conservan y se suben con el siguiente guardado.
-                        if (retrySilently && lastSyncedDataHash !== '' &&
-                            simpleDataHash(getAppDataForFirebase()) !== lastSyncedDataHash) {
-                            console.log('Carga inicial: se conservan los cambios locales no sincronizados');
-                            lastRemoteDataHash = simpleDataHash(data);
-                            debouncedSaveToFirebase();
-                        } else {
-                            lastRemoteDataHash = simpleDataHash(data);
-                            applyFirebaseData(data);
-                            showNotification('Datos sincronizados desde Firebase');
-                        }
+                        lastRemoteDataHash = simpleDataHash(data);
+                        applyFirebaseData(data);
+                        showNotification('Datos sincronizados desde Firebase');
                     }
                 } else {
                     showNotification('No hay datos en Firebase. Se sincronizarán los datos locales.', 'info');
@@ -2106,11 +1900,9 @@
                 console.error('Error al cargar datos iniciales:', e);
                 updateFirebaseStatus(false);
                 updateSyncIndicator('sync-error');
-                if (!retrySilently) showNotification('Error de conexión con Firebase: ' + e.message, 'error');
-                // Reintentar en segundo plano hasta completar la primera lectura
-                setTimeout(function() { loadInitialData(true); }, 30000);
+                showNotification('Error de conexión con Firebase: ' + e.message, 'error');
             } finally {
-                if (!retrySilently) unblockInterface();
+                unblockInterface();
             }
         }
 
@@ -2195,9 +1987,7 @@
             if (autoSaveInterval) clearInterval(autoSaveInterval);
             if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
             console.log('Sincronización en tiempo real activada (Firebase onValue)');
-            // Safety net: cada 10 minutos, subir el estado SOLO si ha cambiado.
-            // (saveToFirebase omite la escritura si no hay cambios respecto a la
-            // última sincronización y hasta que la carga inicial haya terminado)
+            // Safety net: cada 10 minutos, forzar un save si hay cambios pendientes
             autoSaveInterval = setInterval(function() {
                 if (isAdminUser() && !syncDebounceTimer) {
                     saveToFirebase();
@@ -2273,11 +2063,7 @@
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
                     lastRemoteDataHash = simpleDataHash(data);
-                    // Restauración explícita de una copia: reemplaza los mapas por
-                    // curso (sin la fusión de protección) y no se marca como
-                    // sincronizada, para que el estado restaurado se suba al servidor.
-                    applyFirebaseData(data, { mergeCourses: false, markSynced: false });
-                    debouncedSaveToFirebase();
+                    applyFirebaseData(data);
                     showNotification('Copia restaurada correctamente');
                 } else throw new Error('Formato incorrecto.');
             } catch (e) {
@@ -2387,17 +2173,10 @@
                         teachers: normalizeTeachers(parsed.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(parsed.aytoProjects, selCourse),
                         coursesList: parsed.coursesList || [],
-                        dossierUrls: parsed.dossierUrls || {},
-                        programs: normalizePrograms(parsed.programs),
-                        archivedPrograms: normalizeArchivedPrograms(parsed.archivedPrograms)
+                        dossierUrls: parsed.dossierUrls || {}
                     };
                 } catch (e) { console.warn('Error al cargar datos guardados'); }
             }
-            // Catálogo de programas: usar el guardado o los por defecto, y enlazar programsData
-            appState.programs = normalizePrograms(appState.programs);
-            programsData = appState.programs;
-            // Archivo de programas eliminados
-            appState.archivedPrograms = normalizeArchivedPrograms(appState.archivedPrograms);
             // Asegurar datos para el curso activo
             ensureActiveCourseData();
             // Si no hay proyectos ayto, inicializar con los defaults para el curso seleccionado
@@ -2536,18 +2315,12 @@
                     programCard.innerHTML = `
                         <div class="program-header">
                             <div>
-                                <div class="program-name">${escapeHtml(program.name)}</div>
+                                <div class="program-name">${program.name}</div>
                                 ${program.url ? `<a href="${escapeHtml(program.url)}" target="_blank" class="program-link">
                                     <i class="fas fa-external-link-alt"></i> Más información
                                 </a>` : ''}
                                 ${coordText}
                             </div>
-                            ${admin ? `<div class="program-actions">
-                                <button type="button" class="btn-sm move move-up" title="Subir tarjeta (ajustar al orden del dossier)"><i class="fas fa-arrow-up"></i></button>
-                                <button type="button" class="btn-sm move move-down" title="Bajar tarjeta (ajustar al orden del dossier)"><i class="fas fa-arrow-down"></i></button>
-                                <button type="button" class="btn-sm edit" title="Editar programa"><i class="fas fa-pen"></i></button>
-                                <button type="button" class="btn-sm delete" title="Eliminar programa"><i class="fas fa-trash"></i></button>
-                            </div>` : ''}
                         </div>
                         ${admin ? `<div class="program-check">
                             <label class="check-label">
@@ -2563,23 +2336,6 @@
                     container.appendChild(programCard);
 
                     if (admin) {
-                        const editBtn = programCard.querySelector('.program-actions .btn-sm.edit');
-                        const deleteBtn = programCard.querySelector('.program-actions .btn-sm.delete');
-                        const moveUpBtn = programCard.querySelector('.program-actions .btn-sm.move-up');
-                        const moveDownBtn = programCard.querySelector('.program-actions .btn-sm.move-down');
-                        if (editBtn) editBtn.addEventListener('click', () => openProgramModal(type, program.id));
-                        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteProgram(type, program.id));
-                        if (moveUpBtn) moveUpBtn.addEventListener('click', () => moveProgramCard(type, program.id, -1));
-                        if (moveDownBtn) moveDownBtn.addEventListener('click', () => moveProgramCard(type, program.id, 1));
-
-                        // Reordenación por arrastre dentro de la misma categoría
-                        programCard.draggable = true;
-                        programCard.addEventListener('dragstart', e => handleCardDragStart(e, type, program.id));
-                        programCard.addEventListener('dragend', handleCardDragEnd);
-                        programCard.addEventListener('dragover', handleCardDragOver);
-                        programCard.addEventListener('dragleave', handleCardDragLeave);
-                        programCard.addEventListener('drop', e => handleCardDrop(e, type, program.id));
-
                         const checkbox = document.getElementById(`check-${program.id}`);
                         const coordinatorBtn = document.getElementById(`coordinator-${program.id}`);
                         const coordLabel = document.getElementById(`coord-${program.id}`);
@@ -2595,7 +2351,6 @@
 
                         checkbox.addEventListener('change', function() {
                             handleParticipationChange(program.id, this.checked);
-                            updatePlanCounters();
                             if (this.checked) {
                                 coordinatorBtn.style.display = 'block';
                             } else {
@@ -2618,11 +2373,6 @@
                     }
                 });
             }
-
-            // Refrescar el contador de archivados en los botones de las categorías
-            updateArchivedButtons();
-            // Refrescar los contadores de planes en desarrollo (títulos, home y total)
-            updatePlanCounters();
         }
 
         function handleParticipationChange(programId, participates) {
@@ -2655,501 +2405,9 @@
             modal.classList.add('active');
         }
 
-        // ================================================
-        // GESTIÓN DE PROGRAMAS (AÑADIR / EDITAR / ELIMINAR)
-        // ================================================
-
-        // Normaliza el catálogo de programas: valida estructura y completa con
-        // los valores por defecto lo que falte. Siempre devuelve las 3 categorías.
-        function normalizePrograms(data) {
-            const defaults = JSON.parse(JSON.stringify(defaultProgramsData));
-            if (!data || typeof data !== 'object' || Array.isArray(data)) return defaults;
-            const result = {};
-            ['type-a', 'type-b', 'type-c'].forEach(type => {
-                const list = data[type];
-                // Un array (aunque esté vacío) respeta lo guardado: si se eliminaron
-                // todas las tarjetas de la categoría no se regeneran los programas
-                // por defecto. Solo se usan los defaults si la categoría no existe.
-                if (Array.isArray(list)) {
-                    result[type] = list
-                        .filter(p => p && typeof p === 'object' && p.id && p.name)
-                        .map(p => ({ id: String(p.id), name: String(p.name), url: p.url ? String(p.url) : '' }));
-                } else {
-                    result[type] = defaults[type];
-                }
-            });
-            return result;
-        }
-
-        // Genera un id único para un nuevo programa de la categoría indicada.
-        // Empieza en 100 para no chocar con los ids oficiales (a1..a99).
-        function generateProgramId(type) {
-            const prefix = type.replace('type-', '');
-            let max = 99;
-            const consider = p => {
-                const m = String(p.id).match(new RegExp('^' + prefix + '(\\d+)$'));
-                if (m) max = Math.max(max, parseInt(m[1], 10));
-            };
-            (programsData[type] || []).forEach(consider);
-            // Evitar colisiones también con los ids de programas archivados
-            getArchivedPrograms().forEach(consider);
-            return prefix + (max + 1);
-        }
-
-        // Abre el modal de programa en modo alta (programId = null) o edición
-        function openProgramModal(type, programId) {
-            if (!isAdminUser()) return;
-            const modal = document.getElementById('modal-program');
-            const titleEl = document.getElementById('program-modal-title-text');
-            const nameInput = document.getElementById('program-modal-name');
-            const urlInput = document.getElementById('program-modal-url');
-            const typeSelect = document.getElementById('program-modal-type');
-            const errorEl = document.getElementById('program-modal-error');
-            const idInput = document.getElementById('program-modal-program-id');
-            const origTypeInput = document.getElementById('program-modal-original-type');
-
-            errorEl.textContent = '';
-            typeSelect.value = type;
-
-            if (programId) {
-                const program = (programsData[type] || []).find(p => p.id === programId);
-                if (!program) return;
-                titleEl.textContent = 'Editar programa';
-                nameInput.value = program.name;
-                urlInput.value = program.url || '';
-                idInput.value = programId;
-                origTypeInput.value = type;
-            } else {
-                titleEl.textContent = 'Nuevo programa';
-                nameInput.value = '';
-                urlInput.value = '';
-                idInput.value = '';
-                origTypeInput.value = type;
-            }
-
-            modal.classList.add('active');
-            setTimeout(() => nameInput.focus(), 50);
-        }
-
-        function closeProgramModal() {
-            document.getElementById('modal-program').classList.remove('active');
-        }
-
-        // Guarda (crea o actualiza) el programa del modal
-        function saveProgramFromModal(event) {
-            event.preventDefault();
-            if (!isAdminUser()) return;
-
-            const nameInput = document.getElementById('program-modal-name');
-            const urlInput = document.getElementById('program-modal-url');
-            const typeSelect = document.getElementById('program-modal-type');
-            const errorEl = document.getElementById('program-modal-error');
-            const idInput = document.getElementById('program-modal-program-id');
-            const origTypeInput = document.getElementById('program-modal-original-type');
-
-            const name = nameInput.value.trim();
-            const url = urlInput.value.trim();
-            const targetType = typeSelect.value;
-            const origType = origTypeInput.value;
-            const programId = idInput.value;
-
-            // Validaciones
-            if (!name) { errorEl.textContent = 'El nombre del programa es obligatorio.'; return; }
-            if (url && !/^https?:\/\//i.test(url)) {
-                errorEl.textContent = 'La URL debe empezar por http:// o https://';
-                return;
-            }
-            const duplicado = (programsData[targetType] || []).some(p =>
-                p.name.toLowerCase() === name.toLowerCase() && p.id !== programId
-            );
-            if (duplicado) { errorEl.textContent = 'Ya existe un programa con ese nombre en esta categoría.'; return; }
-
-            if (programId) {
-                // Edición: localizar el programa (puede cambiar de categoría)
-                const program = (programsData[origType] || []).find(p => p.id === programId);
-                if (!program) { errorEl.textContent = 'No se ha encontrado el programa.'; return; }
-                program.name = name;
-                program.url = url;
-                if (targetType !== origType) {
-                    programsData[origType] = programsData[origType].filter(p => p.id !== programId);
-                    programsData[targetType].push(program);
-                }
-                showNotification(`Programa "${name}" actualizado.`);
-            } else {
-                // Alta: crear con un id nuevo en la categoría seleccionada
-                const newId = generateProgramId(targetType);
-                programsData[targetType].push({ id: newId, name: name, url: url });
-                showNotification(`Programa "${name}" añadido correctamente.`);
-            }
-
-            saveData();          // Persistir (localStorage + Firebase) - programs está dentro de appState
-            initPrograms();      // Re-renderizar las tarjetas
-            closeProgramModal();
-        }
-
-        // Elimina un programa: lo retira del catálogo, limpia su participación y
-        // coordinación en todos los cursos y GUARDA LA TARJETA en el archivo de
-        // programas eliminados, desde donde podrá restaurarla más adelante.
-        function deleteProgram(type, programId) {
-            if (!isAdminUser()) return;
-            const program = (programsData[type] || []).find(p => p.id === programId);
-            if (!program) return;
-
-            if (!confirm(`¿Eliminar el programa "${program.name}"?\n\nSe retirará de la categoría y se eliminará su información de participación y coordinación en todos los cursos.\n\nLa tarjeta quedará guardada en "Programas archivados" y podrá restaurarla más adelante.`)) return;
-
-            // Quitar del catálogo
-            programsData[type] = programsData[type].filter(p => p.id !== programId);
-
-            // Guardar la tarjeta en el archivo de programas eliminados
-            // (si ya había una archivada con el mismo id, se sustituye por la nueva)
-            if (!Array.isArray(appState.archivedPrograms)) appState.archivedPrograms = [];
-            appState.archivedPrograms = appState.archivedPrograms.filter(p => p.id !== programId);
-            appState.archivedPrograms.push({
-                id: program.id,
-                name: program.name,
-                url: program.url || '',
-                type: type,
-                archivedAt: new Date().toISOString()
-            });
-
-            // Limpiar participación en todos los cursos
-            if (appState.participation) {
-                for (const course in appState.participation) {
-                    if (appState.participation[course] && appState.participation[course][programId]) {
-                        delete appState.participation[course][programId];
-                    }
-                }
-            }
-
-            saveData();
-            initPrograms();
-            showNotification(`Programa "${program.name}" archivado. Puede restaurarlo desde "Programas archivados".`);
-        }
-
-        // ================================================
-        // ARCHIVO DE PROGRAMAS ELIMINADOS
-        // ================================================
-
-        // Devuelve la lista de programas archivados (eliminados) de forma segura
-        function getArchivedPrograms() {
-            return Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : [];
-        }
-
-        // Normaliza el archivo de programas eliminados: valida cada entrada
-        // (id con el patrón conocido, nombre y categoría válidos) y deduplica por id.
-        function normalizeArchivedPrograms(data) {
-            if (!Array.isArray(data)) return [];
-            const validTypes = ['type-a', 'type-b', 'type-c'];
-            const byId = {};
-            data.forEach(p => {
-                if (!p || typeof p !== 'object') return;
-                const id = String(p.id || '');
-                const name = String(p.name || '').trim();
-                const type = validTypes.indexOf(p.type) !== -1 ? p.type : '';
-                if (!/^[abc]\d+$/.test(id) || !name || !type) return;
-                byId[id] = {
-                    id: id,
-                    name: name,
-                    url: p.url ? String(p.url) : '',
-                    type: type,
-                    archivedAt: p.archivedAt ? String(p.archivedAt) : ''
-                };
-            });
-            return Object.keys(byId).map(k => byId[k]);
-        }
-
-        // Etiqueta corta de la categoría para mensajes y distintivos
-        function getTypeLabel(type) {
-            if (type === 'type-a') return 'Tipo A';
-            if (type === 'type-b') return 'Tipo B';
-            if (type === 'type-c') return 'Tipo C';
-            return type;
-        }
-
-        // Formatea la fecha de archivado (ISO) para mostrarla en español
-        function formatArchivedDate(iso) {
-            try {
-                const d = new Date(iso);
-                if (isNaN(d.getTime())) return '';
-                return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            } catch (e) { return ''; }
-        }
-
-        // Abre el modal del archivo de programas eliminados
-        function openArchivedModal(filterType) {
-            if (!isAdminUser()) return;
-            const modal = document.getElementById('modal-archived-programs');
-            const filterSelect = document.getElementById('archived-filter-type');
-            filterSelect.value = ['type-a', 'type-b', 'type-c'].indexOf(filterType) !== -1 ? filterType : 'all';
-            renderArchivedPrograms();
-            modal.classList.add('active');
-        }
-
-        function closeArchivedModal() {
-            document.getElementById('modal-archived-programs').classList.remove('active');
-        }
-
-        // Renderiza la lista de programas archivados aplicando el filtro de categoría
-        function renderArchivedPrograms() {
-            const listEl = document.getElementById('archived-programs-list');
-            const emptyEl = document.getElementById('archived-programs-empty');
-            const filterSelect = document.getElementById('archived-filter-type');
-            if (!listEl || !emptyEl || !filterSelect) return;
-            const filter = filterSelect.value;
-
-            const archived = getArchivedPrograms()
-                .filter(p => filter === 'all' || p.type === filter)
-                .sort((a, b) => String(b.archivedAt || '').localeCompare(String(a.archivedAt || '')));
-
-            listEl.innerHTML = '';
-            if (archived.length === 0) {
-                emptyEl.style.display = 'block';
-                emptyEl.textContent = filter === 'all'
-                    ? 'No hay programas archivados. Los programas que elimine quedarán guardados aquí y podrán restaurarse.'
-                    : `No hay programas archivados en la categoría ${getTypeLabel(filter)}.`;
-                return;
-            }
-            emptyEl.style.display = 'none';
-
-            archived.forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'archived-item';
-                item.innerHTML = `
-                    <div class="archived-item-info">
-                        <div class="archived-item-name">${escapeHtml(p.name)}</div>
-                        <div class="archived-item-meta">
-                            <span class="archived-badge ${p.type}">${getTypeLabel(p.type)}</span>
-                            ${p.archivedAt ? `<span class="archived-date">Eliminado el ${formatArchivedDate(p.archivedAt)}</span>` : ''}
-                        </div>
-                        ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" class="program-link"><i class="fas fa-external-link-alt"></i> Más información</a>` : ''}
-                    </div>
-                    <button type="button" class="btn btn-primary btn-restore" data-id="${escapeHtml(p.id)}" title="Devolver esta tarjeta a su categoría original">
-                        <i class="fas fa-trash-restore"></i> Restaurar
-                    </button>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        // Restaura un programa archivado: lo devuelve a su categoría original
-        function restoreArchivedProgram(archivedId) {
-            if (!isAdminUser()) return;
-            const archived = getArchivedPrograms().find(p => p.id === archivedId);
-            if (!archived) return;
-
-            const targetType = archived.type;
-
-            // No permitir duplicados de nombre en la categoría de destino
-            const duplicado = (programsData[targetType] || []).some(p =>
-                p.name.toLowerCase() === archived.name.toLowerCase()
-            );
-            if (duplicado) {
-                alert(`Ya existe un programa llamado "${archived.name}" en la categoría ${getTypeLabel(targetType)}.\n\nRenombre o elimine ese programa antes de restaurar la tarjeta archivada.`);
-                return;
-            }
-
-            if (!Array.isArray(programsData[targetType])) programsData[targetType] = [];
-
-            // Reutilizar el id original si está libre; si se ocupó mientras estaba
-            // archivado, generar uno nuevo (la participación se limpió al archivar)
-            let newId = archived.id;
-            const idOcupado = ['type-a', 'type-b', 'type-c'].some(t =>
-                (programsData[t] || []).some(p => p.id === newId)
-            );
-            if (idOcupado) newId = generateProgramId(targetType);
-
-            programsData[targetType].push({ id: newId, name: archived.name, url: archived.url || '' });
-
-            // Quitar del archivo
-            appState.archivedPrograms = getArchivedPrograms().filter(p => p.id !== archivedId);
-
-            saveData();
-            initPrograms();
-            renderArchivedPrograms();
-            showNotification(`Programa "${archived.name}" restaurado en ${getTypeLabel(targetType)}.`);
-        }
-
-        // Actualiza el contador de archivados en los botones de las categorías
-        function updateArchivedButtons() {
-            const total = getArchivedPrograms().length;
-            ['type-a', 'type-b', 'type-c'].forEach(type => {
-                const btn = document.getElementById(`view-archived-${type}`);
-                if (btn) btn.innerHTML = '<i class="fas fa-box-archive"></i> Programas archivados' + (total > 0 ? ' (' + total + ')' : '');
-            });
-        }
-
-        // ================================================
-        // CONTADORES DE PLANES EN DESARROLLO EN EL CENTRO
-        // ================================================
-
-        // Cuenta los planes de una categoría (A/B/C) que el centro desarrolla en
-        // el curso activo (casilla "El IES participa en este programa")
-        function countActivePrograms(type) {
-            const list = programsData[type];
-            if (!Array.isArray(list)) return 0;
-            const participation = getActiveParticipation();
-            return list.filter(program => {
-                const entry = participation[program.id];
-                return !!(entry && entry.participates);
-            }).length;
-        }
-
-        // Cuenta los proyectos de Ayuntamiento del curso activo
-        function countAytoProjects() {
-            const course = appState.selectedCourse || getCurrentCourse();
-            const projects = (appState.aytoProjects && appState.aytoProjects[course]) ? appState.aytoProjects[course] : [];
-            return Array.isArray(projects) ? projects.length : 0;
-        }
-
-        // Actualiza el recuento de planes que se desarrollan en el centro:
-        // - chip junto al título de cada subpantalla (Planes A/B/C y Ayuntamiento)
-        // - contadores de los botones de acceso de la pantalla de inicio
-        // - total entre paréntesis junto a "Portal de Programas Educativos"
-        function updatePlanCounters() {
-            const counts = {
-                'type-a': countActivePrograms('type-a'),
-                'type-b': countActivePrograms('type-b'),
-                'type-c': countActivePrograms('type-c')
-            };
-            const aytoCount = countAytoProjects();
-
-            // Títulos de las subpantallas
-            const titleIds = { 'type-a': 'page-count-type-a', 'type-b': 'page-count-type-b', 'type-c': 'page-count-type-c' };
-            for (const type in titleIds) {
-                const el = document.getElementById(titleIds[type]);
-                if (el) el.textContent = counts[type] === 1 ? '1 plan' : counts[type] + ' planes';
-            }
-            const aytoTitleEl = document.getElementById('page-count-ayto');
-            if (aytoTitleEl) aytoTitleEl.textContent = aytoCount === 1 ? '1 proyecto' : aytoCount + ' proyectos';
-
-            // Botones de acceso de la pantalla de inicio
-            const btnIds = { 'type-a': 'home-count-type-a', 'type-b': 'home-count-type-b', 'type-c': 'home-count-type-c' };
-            for (const type in btnIds) {
-                const el = document.getElementById(btnIds[type]);
-                if (el) el.textContent = '(' + counts[type] + ')';
-            }
-            const aytoBtnEl = document.getElementById('home-count-ayto');
-            if (aytoBtnEl) aytoBtnEl.textContent = '(' + aytoCount + ')';
-
-            // Total del portal: suma de A + B + C + Proyectos del Ayuntamiento
-            const total = counts['type-a'] + counts['type-b'] + counts['type-c'] + aytoCount;
-            const totalEl = document.getElementById('home-total-count');
-            if (totalEl) totalEl.textContent = '(' + total + ')';
-        }
-
-        // ================================================
-        // MANUAL DE USO (descarga según el perfil conectado)
-        // ================================================
-
-        // Descarga el manual de uso correspondiente al perfil del usuario conectado.
-        // Los manuales se alojan junto al archivo index.html.
-        function downloadManual() {
-            const file = (currentUser && currentUser.rol === 'admin') ? 'manual-administrador.pdf' : 'manual-usuario.pdf';
-            const link = document.createElement('a');
-            link.href = file;
-            link.download = file;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showNotification(`Descargando el manual de su perfil (${file}).`);
-        }
-
-        // ================================================
-        // REORDENACIÓN DE TARJETAS (ajustar al orden del dossier)
-        // ================================================
-
-        // Mueve una tarjeta una posición arriba (-1) o abajo (+1) en su categoría
-        function moveProgramCard(type, programId, direction) {
-            if (!isAdminUser()) return;
-            const list = programsData[type];
-            if (!Array.isArray(list)) return;
-            const index = list.findIndex(p => p.id === programId);
-            if (index === -1) return;
-            const target = index + direction;
-            if (target < 0 || target >= list.length) return;
-            const [moved] = list.splice(index, 1);
-            list.splice(target, 0, moved);
-            saveData();
-            initPrograms();
-        }
-
-        // Inicio del arrastre: guarda qué tarjeta se mueve y de qué categoría
-        function handleCardDragStart(e, type, programId) {
-            if (!isAdminUser()) { e.preventDefault(); return; }
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', JSON.stringify({ type: type, programId: programId }));
-            e.currentTarget.classList.add('dragging');
-        }
-
-        // Fin del arrastre (con o sin soltar): limpieza de estilos visuales
-        function handleCardDragEnd(e) {
-            e.currentTarget.classList.remove('dragging');
-            document.querySelectorAll('.program-card.drag-over').forEach(el => el.classList.remove('drag-over'));
-        }
-
-        // Permitir soltar sobre otra tarjeta de la misma categoría y resaltarla
-        function handleCardDragOver(e) {
-            if (!isAdminUser()) return;
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('drag-over');
-        }
-
-        function handleCardDragLeave(e) {
-            e.currentTarget.classList.remove('drag-over');
-        }
-
-        // Soltar: recoloca la tarjeta arrastrada antes o después del objetivo
-        // según la mitad del mismo en la que se haya soltado (arriba/abajo)
-        function handleCardDrop(e, targetType, targetProgramId) {
-            if (!isAdminUser()) return;
-            e.preventDefault();
-            let payload = null;
-            try { payload = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (err) { payload = null; }
-            if (!payload || payload.type !== targetType || payload.programId === targetProgramId) return;
-            const list = programsData[targetType];
-            const fromIndex = list.findIndex(p => p.id === payload.programId);
-            if (fromIndex === -1) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const after = (e.clientY - rect.top) > rect.height / 2;
-            // Quitar la tarjeta de su posición actual
-            const [moved] = list.splice(fromIndex, 1);
-            // Insertar respecto al objetivo (que pudo desplazarse al quitar la origen)
-            let insertAt = list.findIndex(p => p.id === targetProgramId);
-            if (insertAt === -1) { list.splice(fromIndex, 0, moved); return; }
-            if (after) insertAt += 1;
-            list.splice(insertAt, 0, moved);
-            saveData();
-            initPrograms();
-        }
-
         function initEvents() {
             document.getElementById('close-modal').addEventListener('click', closeCoordinatorModal);
             document.getElementById('cancel-coordinator').addEventListener('click', closeCoordinatorModal);
-
-            // Gestión de programas (añadir / editar / eliminar tarjetas)
-            document.getElementById('close-program-modal').addEventListener('click', closeProgramModal);
-            document.getElementById('cancel-program-modal').addEventListener('click', closeProgramModal);
-            document.getElementById('program-form').addEventListener('submit', saveProgramFromModal);
-            ['type-a', 'type-b', 'type-c'].forEach(type => {
-                const addBtn = document.getElementById(`add-program-${type}`);
-                if (addBtn) addBtn.addEventListener('click', () => openProgramModal(type, null));
-            });
-
-            // Archivo de programas eliminados (restauración de tarjetas)
-            document.getElementById('close-archived-modal').addEventListener('click', closeArchivedModal);
-            document.getElementById('archived-filter-type').addEventListener('change', renderArchivedPrograms);
-            document.getElementById('archived-programs-list').addEventListener('click', function(e) {
-                const restoreBtn = e.target.closest('.btn-restore');
-                if (restoreBtn) restoreArchivedProgram(restoreBtn.getAttribute('data-id'));
-            });
-            ['type-a', 'type-b', 'type-c'].forEach(type => {
-                const archivedBtn = document.getElementById(`view-archived-${type}`);
-                if (archivedBtn) archivedBtn.addEventListener('click', () => openArchivedModal(type));
-            });
-
-            // Descarga del manual de uso según el perfil conectado
-            document.getElementById('manual-btn').addEventListener('click', downloadManual);
 
             document.getElementById('save-to-firebase').addEventListener('click', saveToFirebase);
             document.getElementById('load-from-firebase').addEventListener('click', loadFromFirebase);
@@ -3517,8 +2775,6 @@
         }
 
         function renderAytoProjects() {
-            // Refrescar los contadores de planes/proyectos (títulos, home y total)
-            updatePlanCounters();
             const activeCourse = appState.selectedCourse || getCurrentCourse();
             const projects = (appState.aytoProjects && appState.aytoProjects[activeCourse]) ? appState.aytoProjects[activeCourse] : [];
             const buttonsContainer = document.getElementById('ayto-buttons-container');
@@ -3897,25 +3153,15 @@
         function handleTeacherFile(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const fileName = file.name.toLowerCase();
-            // Archivos de Séneca en formato Excel (.xls/.xlsx)
-            if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-                handleSenecaExcelFile(file);
-                event.target.value = '';
-                return;
-            }
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     let teachers = [];
                     const content = e.target.result;
-                    if (fileName.endsWith('.txt')) {
+                    if (file.name.endsWith('.txt')) {
                         teachers = parseTxtFile(content);
-                    } else if (fileName.endsWith('.csv')) {
+                    } else if (file.name.endsWith('.csv')) {
                         teachers = parseCsvFile(content);
-                    } else {
-                        alert('Formato de archivo no soportado.\nFormatos aceptados: .txt, .csv y Excel de Séneca (.xls, .xlsx).');
-                        return;
                     }
                     teachers = teachers.map(teacher => normalizeName(teacher));
                     const activeCourse = appState.selectedCourse || getCurrentCourse();
@@ -3954,193 +3200,6 @@
                 if (teacher) teachers.push(teacher);
             }
             return teachers;
-        }
-
-        // ================================================
-        // IMPORTACIÓN DE PROFESORADO DESDE SÉNECA (EXCEL)
-        // ================================================
-
-        // Importa el profesorado desde un archivo de Séneca en formato Excel
-        // (RelPerCen.xls u otro listado con la columna "Empleado/a")
-        function handleSenecaExcelFile(file) {
-            // El archivo se procesa en el navegador con la librería SheetJS
-            if (typeof XLSX === 'undefined') {
-                alert('No se ha podido cargar el módulo de lectura de Excel (SheetJS).\nCompruebe su conexión a Internet, recargue la página o importe el listado en formato .txt o .csv.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const result = parseSenecaExcel(e.target.result);
-                    if (!result) return; // El error ya se ha mostrado al usuario
-                    if (result.teachers.length === 0) {
-                        alert('No se ha encontrado ningún profesor válido en el archivo de Excel.');
-                        return;
-                    }
-
-                    const activeCourse = appState.selectedCourse || getCurrentCourse();
-                    if (!appState.teachers[activeCourse]) appState.teachers[activeCourse] = [];
-                    const existing = appState.teachers[activeCourse];
-
-                    // Si ya existe una lista, preguntar si se reemplaza o se combina
-                    let finalTeachers = result.teachers;
-                    let combinado = false;
-                    if (existing.length > 0) {
-                        const reemplazar = confirm(
-                            `El curso ${activeCourse} ya tiene ${existing.length} profesor(es) en la lista.\n\n` +
-                            `Pulse ACEPTAR para REEMPLAZARLA por los ${result.teachers.length} profesores del archivo de Séneca.\n` +
-                            `Pulse CANCELAR para COMBINAR ambas listas (se mantienen los actuales y se añaden los nuevos).`
-                        );
-                        if (!reemplazar) {
-                            finalTeachers = mergeTeacherLists(existing, result.teachers);
-                            combinado = true;
-                        }
-                    }
-
-                    appState.teachers[activeCourse] = finalTeachers;
-                    updateTeacherSelectors();
-                    saveData();
-
-                    let msg = `Se han importado ${result.teachers.length} profesores del archivo de Séneca en el curso ${activeCourse}.`;
-                    if (combinado) msg += `\n\nLista combinada: ${finalTeachers.length} profesores en total.`;
-                    if (result.excludedCese > 0) msg += `\n\nSe han excluido ${result.excludedCese} profesor(es) cuya fecha de cese es anterior al inicio del curso seleccionado.`;
-                    if (result.skippedRows > 0) msg += `\n${result.skippedRows} fila(s) del archivo no contienen un nombre válido ("Apellidos, Nombre") y no se han importado.`;
-                    alert(msg);
-                } catch (error) {
-                    alert('Error al procesar el archivo de Excel. Verifique que se trata de un listado de profesorado de Séneca (por ejemplo, RelPerCen.xls) válido.');
-                    console.error(error);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        // Analiza un archivo de Séneca (Excel) y extrae el listado de profesorado.
-        // Devuelve { teachers, excludedCese, skippedRows } o null si el archivo no es válido.
-        function parseSenecaExcel(arrayBuffer) {
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-            // Buscar la hoja de personal de Séneca; si no existe, usar la primera
-            let sheetName = workbook.SheetNames.find(name => /personal/i.test(name));
-            if (!sheetName) sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            if (!sheet) {
-                alert('El archivo de Excel no contiene ninguna hoja con datos.');
-                return null;
-            }
-            // Convertir la hoja en filas de texto (raw: false respeta el formato visible en Excel)
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-
-            // Localizar la fila de cabecera y las columnas relevantes
-            const header = findSenecaHeader(rows);
-            if (!header) {
-                alert('No se ha encontrado la columna "Empleado/a" en el archivo.\nVerifique que se trata del listado de profesorado de Séneca (por ejemplo, RelPerCen.xls).');
-                return null;
-            }
-
-            const activeCourse = appState.selectedCourse || getCurrentCourse();
-            const courseStart = getCourseStartDate(activeCourse);
-
-            const teachers = [];
-            const seen = new Set();
-            let excludedCese = 0;
-            let skippedRows = 0;
-
-            for (let i = header.rowIndex + 1; i < rows.length; i++) {
-                const row = rows[i] || [];
-                const name = normalizeName(cellToText(row[header.nameCol]));
-                // Ignorar filas vacías o repeticiones de la cabecera
-                if (!name || /^empleado\b/i.test(name)) continue;
-                // El listado de Séneca usa el formato "Apellidos, Nombre"
-                if (!name.includes(',')) { skippedRows++; continue; }
-                // Excluir a quienes causaron baja antes del inicio del curso seleccionado
-                if (header.ceseCol !== -1) {
-                    const cese = parseSpanishDate(row[header.ceseCol]);
-                    if (cese && cese < courseStart) { excludedCese++; continue; }
-                }
-                // Evitar duplicados dentro del propio archivo
-                const key = name.toLowerCase();
-                if (seen.has(key)) continue;
-                seen.add(key);
-                teachers.push(name);
-            }
-
-            sortTeachersByName(teachers);
-            return { teachers, excludedCese, skippedRows };
-        }
-
-        // Convierte el valor de una celda de Excel en texto limpio
-        function cellToText(value) {
-            if (value === null || value === undefined) return '';
-            return String(value).trim();
-        }
-
-        // Localiza la fila de cabecera del listado de Séneca y las columnas de interés.
-        // Devuelve { rowIndex, nameCol, ceseCol } o null si no hay columna "Empleado/a".
-        function findSenecaHeader(rows) {
-            const maxScan = Math.min(rows.length, 15);
-            for (let r = 0; r < maxScan; r++) {
-                const row = rows[r] || [];
-                for (let c = 0; c < row.length; c++) {
-                    const text = cellToText(row[c]).toLowerCase();
-                    if (/^empleado\b/.test(text)) {
-                        // Buscar también la columna de fecha de cese (si existe)
-                        let ceseCol = -1;
-                        for (let c2 = 0; c2 < row.length; c2++) {
-                            if (cellToText(row[c2]).toLowerCase().includes('cese')) { ceseCol = c2; break; }
-                        }
-                        return { rowIndex: r, nameCol: c, ceseCol: ceseCol };
-                    }
-                }
-            }
-            return null;
-        }
-
-        // Interpreta fechas en formato español dd/mm/yyyy (o fecha serial de Excel)
-        function parseSpanishDate(value) {
-            if (value === null || value === undefined || value === '') return null;
-            if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
-            if (typeof value === 'number') {
-                // Fecha serial de Excel: días transcurridos desde el 30/12/1899
-                if (value < 20000 || value > 80000) return null;
-                const date = new Date(Math.round((value - 25569) * 86400000));
-                return isNaN(date.getTime()) ? null : date;
-            }
-            const match = String(value).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-            if (!match) return null;
-            let day = parseInt(match[1], 10);
-            let month = parseInt(match[2], 10);
-            let year = parseInt(match[3], 10);
-            if (year < 100) year += (year < 70 ? 2000 : 1900);
-            if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-            const date = new Date(year, month - 1, day);
-            return isNaN(date.getTime()) ? null : date;
-        }
-
-        // Fecha de inicio de un curso académico (1 de septiembre del primer año)
-        function getCourseStartDate(course) {
-            const match = String(course || '').match(/^(\d{4})/);
-            const year = match ? parseInt(match[1], 10) : new Date().getFullYear();
-            return new Date(year, 8, 1);
-        }
-
-        // Combina dos listas de profesorado evitando duplicados
-        function mergeTeacherLists(existing, incoming) {
-            const result = existing.slice();
-            const seen = new Set(existing.map(t => t.toLowerCase()));
-            incoming.forEach(teacher => {
-                const key = teacher.toLowerCase();
-                if (!seen.has(key)) { seen.add(key); result.push(teacher); }
-            });
-            sortTeachersByName(result);
-            return result;
-        }
-
-        // Ordena una lista de profesorado alfabéticamente por apellidos y nombre
-        function sortTeachersByName(list) {
-            list.sort((a, b) => {
-                const [apA, nomA] = a.split(',').map(s => s.trim().toLowerCase());
-                const [apB, nomB] = b.split(',').map(s => s.trim().toLowerCase());
-                return apA.localeCompare(apB) || nomA.localeCompare(nomB);
-            });
         }
 
         function updateTeacherSelectors() {
@@ -4385,9 +3444,7 @@
                 teachers: appState.teachers,
                 aytoProjects: appState.aytoProjects || {},
                 coursesList: appState.coursesList || [],
-                dossierUrls: appState.dossierUrls || {},
-                programs: appState.programs || programsData,
-                archivedPrograms: Array.isArray(appState.archivedPrograms) ? appState.archivedPrograms : []
+                dossierUrls: appState.dossierUrls || {}
             };
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -4415,15 +3472,8 @@
                         teachers: normalizeTeachers(importedData.teachers, selCourse),
                         aytoProjects: normalizeAytoProjects(importedData.aytoProjects, selCourse),
                         coursesList: importedData.coursesList || [],
-                        dossierUrls: importedData.dossierUrls || {},
-                        programs: normalizePrograms(importedData.programs),
-                        // El archivo de eliminados se conserva si el JSON no lo trae (exportaciones antiguas)
-                        archivedPrograms: importedData.archivedPrograms !== undefined
-                            ? normalizeArchivedPrograms(importedData.archivedPrograms)
-                            : normalizeArchivedPrograms(appState.archivedPrograms)
+                        dossierUrls: importedData.dossierUrls || {}
                     };
-                    // Enlazar el catálogo de programas importado
-                    programsData = appState.programs;
                     // Asegurar datos para el curso activo
                     ensureActiveCourseData();
                     // Forzar URL del dossier bloqueado si existe
@@ -4740,10 +3790,6 @@
 
             // Cargar datos guardados
             loadSavedData();
-            // Semilla del hash de sincronización con el estado local actual:
-            // permite detectar cambios locales hechos antes de la primera
-            // sincronización con Firebase (p. ej. si la carga inicial falla)
-            lastSyncedDataHash = simpleDataHash(getAppDataForFirebase());
             
             // Inicializar componentes de UI
             initNavigation();

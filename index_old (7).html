@@ -102,14 +102,6 @@
         .program-card[draggable="true"] { cursor: grab; }
         .program-card.dragging { opacity: 0.45; }
         .program-card.drag-over { outline: 2px dashed var(--primary); outline-offset: 3px; }
-
-        /* ----- CONTADORES DE PLANES EN DESARROLLO (títulos, home y total) ----- */
-        .page-title .count-chip { background: var(--primary); color: white; font-size: 0.72rem; font-weight: 700; padding: 5px 14px; border-radius: 999px; letter-spacing: 0.3px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); flex-shrink: 0; }
-        .page-title .count-chip.chip-b { background: var(--secondary); }
-        .page-title .count-chip.chip-c { background: var(--accent); }
-        .page-title .count-chip.chip-ayto { background: var(--ayto-color); }
-        .page-title .home-total-count { color: var(--primary); background: rgba(0, 85, 164, 0.08); border-radius: 999px; padding: 3px 12px; font-size: 0.8em; font-weight: 700; }
-        .action-buttons .nav-btn .btn-count { background: rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 2px 10px; font-size: 0.85em; font-weight: 700; flex-shrink: 0; }
         .add-program-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
 
         /* ----- ARCHIVO DE PROGRAMAS ELIMINADOS (restauración de tarjetas) ----- */
@@ -642,21 +634,21 @@
     <div class="container">
         <!-- PÁGINA DE INICIO -->
         <div id="home" class="page active">
-            <h2 class="page-title"><i class="fas fa-home"></i> Portal de Programas Educativos <span id="home-total-count" class="home-total-count"></span></h2>
+            <h2 class="page-title"><i class="fas fa-home"></i> Portal de Programas Educativos</h2>
             <p>Seleccione el tipo de programa para gestionar la participación del IES:</p>
             
             <div class="action-buttons" style="margin-top: 30px;">
                 <button class="nav-btn" data-page="type-a" style="background: var(--primary); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo A <br> Participación de oficio <span id="home-count-type-a" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo A <br> Participación de oficio
                 </button>
                 <button class="nav-btn" data-page="type-b" style="background: var(--secondary); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo B <br> Convocatoria general <span id="home-count-type-b" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo B <br> Convocatoria general
                 </button>
                 <button class="nav-btn" data-page="type-c" style="background: var(--accent); color: white;">
-                    <i class="fas fa-list"></i> Planes Tipo C <br> Convocatoria específica <span id="home-count-type-c" class="btn-count"></span>
+                    <i class="fas fa-list"></i> Planes Tipo C <br> Convocatoria específica
                 </button>
                 <button class="nav-btn" data-page="ayto-projects" style="background: var(--ayto-color); color: white;">
-                    <i class="fas fa-city"></i> Proyectos <br> Ayuntamiento <span id="home-count-ayto" class="btn-count"></span>
+                    <i class="fas fa-city"></i> Proyectos <br> Ayuntamiento
                 </button>
             </div>
 
@@ -817,7 +809,7 @@
                     </button>
                 </div>
             </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio <span id="page-count-type-a" class="count-chip chip-a"></span></h2>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-a"><i class="fas fa-box-archive"></i> Programas archivados</button>
                 <button type="button" class="btn btn-primary" id="add-program-type-a"><i class="fas fa-plus"></i> Añadir programa</button>
@@ -842,7 +834,7 @@
                     </button>
                 </div>
             </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general <span id="page-count-type-b" class="count-chip chip-b"></span></h2>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo B - Convocatoria general</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-b"><i class="fas fa-box-archive"></i> Programas archivados</button>
                 <button type="button" class="btn btn-primary" id="add-program-type-b"><i class="fas fa-plus"></i> Añadir programa</button>
@@ -867,7 +859,7 @@
                     </button>
                 </div>
             </div>
-            <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica <span id="page-count-type-c" class="count-chip chip-c"></span></h2>
+            <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica</h2>
             <div class="add-program-bar admin-only flex-row">
                 <button type="button" class="btn btn-secondary" id="view-archived-type-c"><i class="fas fa-box-archive"></i> Programas archivados</button>
                 <button type="button" class="btn btn-primary" id="add-program-type-c"><i class="fas fa-plus"></i> Añadir programa</button>
@@ -893,7 +885,7 @@
                     </button>
                 </div>
             </div>
-            <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento <span id="page-count-ayto" class="count-chip chip-ayto"></span></h2>
+            <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento</h2>
             <div class="ayto-header">
                 <div class="container">
                     <h1 class="ayto-title">Proyectos en colaboración con el Área de Juventud del Ayuntamiento de Peñaflor</h1>
@@ -2595,7 +2587,6 @@
 
                         checkbox.addEventListener('change', function() {
                             handleParticipationChange(program.id, this.checked);
-                            updatePlanCounters();
                             if (this.checked) {
                                 coordinatorBtn.style.display = 'block';
                             } else {
@@ -2621,8 +2612,6 @@
 
             // Refrescar el contador de archivados en los botones de las categorías
             updateArchivedButtons();
-            // Refrescar los contadores de planes en desarrollo (títulos, home y total)
-            updatePlanCounters();
         }
 
         function handleParticipationChange(programId, participates) {
@@ -2976,65 +2965,6 @@
                 const btn = document.getElementById(`view-archived-${type}`);
                 if (btn) btn.innerHTML = '<i class="fas fa-box-archive"></i> Programas archivados' + (total > 0 ? ' (' + total + ')' : '');
             });
-        }
-
-        // ================================================
-        // CONTADORES DE PLANES EN DESARROLLO EN EL CENTRO
-        // ================================================
-
-        // Cuenta los planes de una categoría (A/B/C) que el centro desarrolla en
-        // el curso activo (casilla "El IES participa en este programa")
-        function countActivePrograms(type) {
-            const list = programsData[type];
-            if (!Array.isArray(list)) return 0;
-            const participation = getActiveParticipation();
-            return list.filter(program => {
-                const entry = participation[program.id];
-                return !!(entry && entry.participates);
-            }).length;
-        }
-
-        // Cuenta los proyectos de Ayuntamiento del curso activo
-        function countAytoProjects() {
-            const course = appState.selectedCourse || getCurrentCourse();
-            const projects = (appState.aytoProjects && appState.aytoProjects[course]) ? appState.aytoProjects[course] : [];
-            return Array.isArray(projects) ? projects.length : 0;
-        }
-
-        // Actualiza el recuento de planes que se desarrollan en el centro:
-        // - chip junto al título de cada subpantalla (Planes A/B/C y Ayuntamiento)
-        // - contadores de los botones de acceso de la pantalla de inicio
-        // - total entre paréntesis junto a "Portal de Programas Educativos"
-        function updatePlanCounters() {
-            const counts = {
-                'type-a': countActivePrograms('type-a'),
-                'type-b': countActivePrograms('type-b'),
-                'type-c': countActivePrograms('type-c')
-            };
-            const aytoCount = countAytoProjects();
-
-            // Títulos de las subpantallas
-            const titleIds = { 'type-a': 'page-count-type-a', 'type-b': 'page-count-type-b', 'type-c': 'page-count-type-c' };
-            for (const type in titleIds) {
-                const el = document.getElementById(titleIds[type]);
-                if (el) el.textContent = counts[type] === 1 ? '1 plan' : counts[type] + ' planes';
-            }
-            const aytoTitleEl = document.getElementById('page-count-ayto');
-            if (aytoTitleEl) aytoTitleEl.textContent = aytoCount === 1 ? '1 proyecto' : aytoCount + ' proyectos';
-
-            // Botones de acceso de la pantalla de inicio
-            const btnIds = { 'type-a': 'home-count-type-a', 'type-b': 'home-count-type-b', 'type-c': 'home-count-type-c' };
-            for (const type in btnIds) {
-                const el = document.getElementById(btnIds[type]);
-                if (el) el.textContent = '(' + counts[type] + ')';
-            }
-            const aytoBtnEl = document.getElementById('home-count-ayto');
-            if (aytoBtnEl) aytoBtnEl.textContent = '(' + aytoCount + ')';
-
-            // Total del portal: suma de A + B + C + Proyectos del Ayuntamiento
-            const total = counts['type-a'] + counts['type-b'] + counts['type-c'] + aytoCount;
-            const totalEl = document.getElementById('home-total-count');
-            if (totalEl) totalEl.textContent = '(' + total + ')';
         }
 
         // ================================================
@@ -3517,8 +3447,6 @@
         }
 
         function renderAytoProjects() {
-            // Refrescar los contadores de planes/proyectos (títulos, home y total)
-            updatePlanCounters();
             const activeCourse = appState.selectedCourse || getCurrentCourse();
             const projects = (appState.aytoProjects && appState.aytoProjects[activeCourse]) ? appState.aytoProjects[activeCourse] : [];
             const buttonsContainer = document.getElementById('ayto-buttons-container');
