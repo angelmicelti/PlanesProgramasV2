@@ -79,6 +79,7 @@
         .type-switch-btn.switch-b { background: var(--secondary); }
         .type-switch-btn.switch-c { background: var(--accent); }
         .type-switch-btn:hover { filter: brightness(1.15); }
+        .type-switch-btn.switch-ayto { background: var(--ayto-color); }
 
         .programs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .program-card { background: white; border-radius: 10px; padding: 20px; box-shadow: var(--shadow); transition: var(--transition); position: relative; overflow: hidden; }
@@ -94,6 +95,13 @@
         .program-actions .btn-sm.edit { background: #2196F3; color: white; }
         .program-actions .btn-sm.delete { background: var(--danger); color: white; }
         .program-actions .btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
+        .program-actions .btn-sm.move { background: #607D8B; color: white; width: 26px; height: 26px; font-size: 0.7rem; }
+        .program-actions .btn-sm.move:hover { background: #455A64; }
+
+        /* ----- REORDENACIÓN DE TARJETAS (orden del dossier) ----- */
+        .program-card[draggable="true"] { cursor: grab; }
+        .program-card.dragging { opacity: 0.45; }
+        .program-card.drag-over { outline: 2px dashed var(--primary); outline-offset: 3px; }
         .add-program-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
 
         /* ----- ARCHIVO DE PROGRAMAS ELIMINADOS (restauración de tarjetas) ----- */
@@ -485,6 +493,12 @@
             font-size: 0.8rem; transition: var(--transition); display: none;
         }
         #admin-users-btn:hover { background: rgba(255,255,255,0.35); }
+        #manual-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 4px 10px; border-radius: 20px; cursor: pointer;
+            font-size: 0.8rem; transition: var(--transition);
+        }
+        #manual-btn:hover { background: rgba(255,255,255,0.35); }
 
         /* Tabla de usuarios en modal admin */
         .users-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -598,6 +612,7 @@
                     <span class="user-name" id="display-username"></span>
                     <span class="user-role" id="display-role"></span>
                     <span class="readonly-badge" id="readonly-badge"><i class="fas fa-eye"></i> Solo lectura</span>
+                    <button id="manual-btn" title="Descargar manual de uso"><i class="fas fa-book-open"></i></button>
                     <button id="admin-users-btn" title="Gestionar usuarios"><i class="fas fa-users-cog"></i></button>
                     <button id="logout-btn" title="Cerrar sesion"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -789,6 +804,9 @@
                     <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
                         <i class="fas fa-list"></i> Planes Tipo C
                     </button>
+                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
+                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
+                    </button>
                 </div>
             </div>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo A - Participación de oficio</h2>
@@ -810,6 +828,9 @@
                     </button>
                     <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
                         <i class="fas fa-list"></i> Planes Tipo C
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
+                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
                     </button>
                 </div>
             </div>
@@ -833,6 +854,9 @@
                     <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
                         <i class="fas fa-list"></i> Planes Tipo B
                     </button>
+                    <button class="nav-btn type-switch-btn switch-ayto" data-page="ayto-projects" title="Ir a Proyectos del Ayuntamiento">
+                        <i class="fas fa-city"></i> Proyectos Ayuntamiento
+                    </button>
                 </div>
             </div>
             <h2 class="page-title"><i class="fas fa-list"></i> Tipo C - Convocatoria específica</h2>
@@ -845,9 +869,22 @@
         
         <!-- PÁGINA DE PROYECTOS DEL AYUNTAMIENTO (dinámico) -->
         <div id="ayto-projects" class="page">
-            <button class="back-btn" data-page="home">
-                <i class="fas fa-arrow-left"></i> Volver al Inicio
-            </button>
+            <div class="page-nav-bar">
+                <button class="back-btn" data-page="home">
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
+                </button>
+                <div class="type-switch-group">
+                    <button class="nav-btn type-switch-btn switch-a" data-page="type-a" title="Ir a Planes Tipo A - Participación de oficio">
+                        <i class="fas fa-list"></i> Planes Tipo A
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-b" data-page="type-b" title="Ir a Planes Tipo B - Convocatoria general">
+                        <i class="fas fa-list"></i> Planes Tipo B
+                    </button>
+                    <button class="nav-btn type-switch-btn switch-c" data-page="type-c" title="Ir a Planes Tipo C - Convocatoria específica">
+                        <i class="fas fa-list"></i> Planes Tipo C
+                    </button>
+                </div>
+            </div>
             <h2 class="page-title"><i class="fas fa-city"></i> Proyectos del Ayuntamiento</h2>
             <div class="ayto-header">
                 <div class="container">
@@ -2393,6 +2430,8 @@
                                 ${coordText}
                             </div>
                             ${admin ? `<div class="program-actions">
+                                <button type="button" class="btn-sm move move-up" title="Subir tarjeta (ajustar al orden del dossier)"><i class="fas fa-arrow-up"></i></button>
+                                <button type="button" class="btn-sm move move-down" title="Bajar tarjeta (ajustar al orden del dossier)"><i class="fas fa-arrow-down"></i></button>
                                 <button type="button" class="btn-sm edit" title="Editar programa"><i class="fas fa-pen"></i></button>
                                 <button type="button" class="btn-sm delete" title="Eliminar programa"><i class="fas fa-trash"></i></button>
                             </div>` : ''}
@@ -2413,8 +2452,20 @@
                     if (admin) {
                         const editBtn = programCard.querySelector('.program-actions .btn-sm.edit');
                         const deleteBtn = programCard.querySelector('.program-actions .btn-sm.delete');
+                        const moveUpBtn = programCard.querySelector('.program-actions .btn-sm.move-up');
+                        const moveDownBtn = programCard.querySelector('.program-actions .btn-sm.move-down');
                         if (editBtn) editBtn.addEventListener('click', () => openProgramModal(type, program.id));
                         if (deleteBtn) deleteBtn.addEventListener('click', () => deleteProgram(type, program.id));
+                        if (moveUpBtn) moveUpBtn.addEventListener('click', () => moveProgramCard(type, program.id, -1));
+                        if (moveDownBtn) moveDownBtn.addEventListener('click', () => moveProgramCard(type, program.id, 1));
+
+                        // Reordenación por arrastre dentro de la misma categoría
+                        programCard.draggable = true;
+                        programCard.addEventListener('dragstart', e => handleCardDragStart(e, type, program.id));
+                        programCard.addEventListener('dragend', handleCardDragEnd);
+                        programCard.addEventListener('dragover', handleCardDragOver);
+                        programCard.addEventListener('dragleave', handleCardDragLeave);
+                        programCard.addEventListener('drop', e => handleCardDrop(e, type, program.id));
 
                         const checkbox = document.getElementById(`check-${program.id}`);
                         const coordinatorBtn = document.getElementById(`coordinator-${program.id}`);
@@ -2811,6 +2862,92 @@
             });
         }
 
+        // ================================================
+        // MANUAL DE USO (descarga según el perfil conectado)
+        // ================================================
+
+        // Descarga el manual de uso correspondiente al perfil del usuario conectado.
+        // Los manuales se alojan junto al archivo index.html.
+        function downloadManual() {
+            const file = (currentUser && currentUser.rol === 'admin') ? 'manual-administrador.pdf' : 'manual-usuario.pdf';
+            const link = document.createElement('a');
+            link.href = file;
+            link.download = file;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification(`Descargando el manual de su perfil (${file}).`);
+        }
+
+        // ================================================
+        // REORDENACIÓN DE TARJETAS (ajustar al orden del dossier)
+        // ================================================
+
+        // Mueve una tarjeta una posición arriba (-1) o abajo (+1) en su categoría
+        function moveProgramCard(type, programId, direction) {
+            if (!isAdminUser()) return;
+            const list = programsData[type];
+            if (!Array.isArray(list)) return;
+            const index = list.findIndex(p => p.id === programId);
+            if (index === -1) return;
+            const target = index + direction;
+            if (target < 0 || target >= list.length) return;
+            const [moved] = list.splice(index, 1);
+            list.splice(target, 0, moved);
+            saveData();
+            initPrograms();
+        }
+
+        // Inicio del arrastre: guarda qué tarjeta se mueve y de qué categoría
+        function handleCardDragStart(e, type, programId) {
+            if (!isAdminUser()) { e.preventDefault(); return; }
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type: type, programId: programId }));
+            e.currentTarget.classList.add('dragging');
+        }
+
+        // Fin del arrastre (con o sin soltar): limpieza de estilos visuales
+        function handleCardDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.program-card.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        // Permitir soltar sobre otra tarjeta de la misma categoría y resaltarla
+        function handleCardDragOver(e) {
+            if (!isAdminUser()) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleCardDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        // Soltar: recoloca la tarjeta arrastrada antes o después del objetivo
+        // según la mitad del mismo en la que se haya soltado (arriba/abajo)
+        function handleCardDrop(e, targetType, targetProgramId) {
+            if (!isAdminUser()) return;
+            e.preventDefault();
+            let payload = null;
+            try { payload = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (err) { payload = null; }
+            if (!payload || payload.type !== targetType || payload.programId === targetProgramId) return;
+            const list = programsData[targetType];
+            const fromIndex = list.findIndex(p => p.id === payload.programId);
+            if (fromIndex === -1) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const after = (e.clientY - rect.top) > rect.height / 2;
+            // Quitar la tarjeta de su posición actual
+            const [moved] = list.splice(fromIndex, 1);
+            // Insertar respecto al objetivo (que pudo desplazarse al quitar la origen)
+            let insertAt = list.findIndex(p => p.id === targetProgramId);
+            if (insertAt === -1) { list.splice(fromIndex, 0, moved); return; }
+            if (after) insertAt += 1;
+            list.splice(insertAt, 0, moved);
+            saveData();
+            initPrograms();
+        }
+
         function initEvents() {
             document.getElementById('close-modal').addEventListener('click', closeCoordinatorModal);
             document.getElementById('cancel-coordinator').addEventListener('click', closeCoordinatorModal);
@@ -2835,6 +2972,9 @@
                 const archivedBtn = document.getElementById(`view-archived-${type}`);
                 if (archivedBtn) archivedBtn.addEventListener('click', () => openArchivedModal(type));
             });
+
+            // Descarga del manual de uso según el perfil conectado
+            document.getElementById('manual-btn').addEventListener('click', downloadManual);
 
             document.getElementById('save-to-firebase').addEventListener('click', saveToFirebase);
             document.getElementById('load-from-firebase').addEventListener('click', loadFromFirebase);
