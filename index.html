@@ -1232,6 +1232,8 @@
         let syncDebounceTimer = null;      // Timer para debuncar escrituras Firebase
         let lastRemoteDataHash = '';       // Hash del último dato remoto (evitar re-render innecesario)
         const SYNC_DEBOUNCE_MS = 1500;     // Espera antes de enviar cambios a Firebase
+        let firebaseInitialLoadDone = false; // true tras la primera lectura exitosa de Firebase (antes no se escribe)
+        let lastSyncedDataHash = '';        // hash del último estado sincronizado (evita escrituras y snapshots innecesarios)
 
         // Catálogo de programas por defecto (plantilla inicial oficial)
         const defaultProgramsData = {
@@ -1841,14 +1843,29 @@
             });
         }
 
-        // Guarda los datos actuales en Firebase (escritura directa)
+        // Guarda los datos actuales en Firebase (escritura directa).
+        // PROTECCIONES:
+        //  1) No se escribe nada hasta completar la primera lectura de Firebase
+        //     (evita que un estado local obsoleto destruya datos más recientes).
+        //  2) Si el estado no ha cambiado desde la última sincronización, se
+        //     omite la escritura (y el snapshot de historial correspondiente).
         async function saveToFirebase() {
             if (!isAdminUser()) return;
+            if (!firebaseInitialLoadDone) {
+                console.log('saveToFirebase omitido: la carga inicial de Firebase no ha terminado todavía');
+                return;
+            }
             try {
+                const data = getAppDataForFirebase();
+                const localHash = simpleDataHash(data);
+                if (localHash === lastSyncedDataHash) {
+                    updateSyncIndicator('synced');
+                    return;
+                }
                 isLocalSave = true;
                 updateSyncIndicator('syncing');
-                const data = getAppDataForFirebase();
                 await db.ref(`${FIREBASE_PATH}/datos`).set(data);
+                lastSyncedDataHash = localHash;
 
                 // Guardar entrada en historial (solo si no es auto-guardado excesivo)
                 const now = Date.now();
@@ -1885,8 +1902,46 @@
             }, SYNC_DEBOUNCE_MS);
         }
 
-        // Función compartida para aplicar datos de Firebase al estado de la app
-        function applyFirebaseData(data) {
+        // ¿Tiene datos con valor la participación de un curso?
+        // (al menos un programa con participación marcada)
+        function courseHasParticipationData(courseData) {
+            if (!courseData || typeof courseData !== 'object') return false;
+            return Object.keys(courseData).some(function(k) {
+                return courseData[k] && typeof courseData[k] === 'object' && courseData[k].participates;
+            });
+        }
+
+        // Fusiona los mapas indexados por curso: el dato remoto manda en los cursos
+        // que incluye, pero se CONSERVAN los cursos locales con datos que el remoto
+        // no trae. Evita que un cliente desactualizado (pestaña antigua o versión
+        // vieja de la app) borre del servidor cursos completos al sobrescribir.
+        function mergePerCourseMaps(remoteMap, localMap, courseHasData) {
+            if (!localMap || typeof localMap !== 'object') return { merged: remoteMap, preserved: [] };
+            const merged = Object.assign({}, remoteMap);
+            const preserved = [];
+            Object.keys(localMap).forEach(function(course) {
+                if (merged[course] === undefined && courseHasData(localMap[course])) {
+                    merged[course] = localMap[course];
+                    preserved.push(course);
+                }
+            });
+            return { merged: merged, preserved: preserved };
+        }
+
+        // Función compartida para aplicar datos de Firebase al estado de la app.
+        // Opciones (opts):
+        //   mergeCourses (defecto true): conserva los cursos locales con datos que
+        //     el dato remoto no incluye (protección anti-borrado). Las restauraciones
+        //     explícitas de copias de seguridad usan false para respetar la copia.
+        //   markSynced (defecto true): registra el hash del dato recibido como
+        //     estado del servidor (si el local difiere, el siguiente guardado repara).
+        function applyFirebaseData(data, opts) {
+            opts = opts || {};
+            const mergeCourses = opts.mergeCourses !== false;
+            // Copias de los mapas por curso ANTES de sobrescribirlos (para la fusión)
+            const prevParticipation = appState.participation || {};
+            const prevTeachers = appState.teachers || {};
+            const prevAytoProjects = appState.aytoProjects || {};
             // IMPORTANTE: leer selectedCourse ANTES de normalizar
             appState.selectedCourse = data.selectedCourse || getCurrentCourse();
             // Forzar curso actual para usuario (solo puede ver el curso vigente)
@@ -1904,6 +1959,18 @@
             }
             ensureActiveCourseData();
             appState.aytoProjects = normalizeAytoProjects(data.aytoProjects, appState.selectedCourse);
+            // Protección de datos por curso: si el dato recibido no incluye un curso
+            // que localmente sí tiene datos, se conserva el dato local
+            let preservedCourses = [];
+            if (mergeCourses) {
+                const resPart = mergePerCourseMaps(appState.participation, prevParticipation, courseHasParticipationData);
+                const resTeach = mergePerCourseMaps(appState.teachers, prevTeachers, function(t) { return Array.isArray(t) && t.length > 0; });
+                const resAyto = mergePerCourseMaps(appState.aytoProjects, prevAytoProjects, function(a) { return Array.isArray(a) && a.length > 0; });
+                appState.participation = resPart.merged;
+                appState.teachers = resTeach.merged;
+                appState.aytoProjects = resAyto.merged;
+                preservedCourses = Array.from(new Set([].concat(resPart.preserved, resTeach.preserved, resAyto.preserved)));
+            }
             if (data.coursesList && data.coursesList.length > 0) appState.coursesList = data.coursesList;
             if (data.dossierUrls) appState.dossierUrls = data.dossierUrls;
             // Forzar URL del dossier bloqueado
@@ -1920,6 +1987,21 @@
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
             updateDossierButton();
             syncAytoCourse();
+            if (preservedCourses.length > 0) {
+                console.warn('Cursos conservados localmente (no venían en los datos recibidos):', preservedCourses.join(', '));
+                showNotification('Se han conservado los datos locales de: ' + preservedCourses.join(', ') + ' (no venían en los datos recibidos)', 'info');
+                // El servidor ha perdido cursos con datos: el estado local
+                // fusionado difiere del dato recibido, así que se programa su
+                // subida para reparar el servidor.
+                debouncedSaveToFirebase();
+            }
+            if (opts.markSynced !== false) {
+                // El hash de sincronización refleja el estado del SERVIDOR tal
+                // y como se ha recibido (no el estado local normalizado o
+                // fusionado): si el local difiere, el siguiente guardado
+                // repara el servidor; si coincide, no se escribe nada.
+                lastSyncedDataHash = simpleDataHash(data);
+            }
             saveLastUpdate('firebase');
         }
 
@@ -1980,17 +2062,32 @@
             }
         }
 
-        // Carga inicial desde Firebase (una vez, al arrancar)
-        async function loadInitialData() {
-            blockInterface('Conectando con Firebase...');
+        // Carga inicial desde Firebase (una vez, al arrancar). Si falla se
+        // reintenta en segundo plano: hasta que la primera lectura no se haya
+        // completado, la app no escribe en Firebase (ver saveToFirebase).
+        async function loadInitialData(retrySilently) {
+            if (!retrySilently) blockInterface('Conectando con Firebase...');
+            else updateSyncIndicator('syncing');
             try {
                 const snapshot = await db.ref(`${FIREBASE_PATH}/datos`).once('value');
+                // Lectura completada: a partir de ahora se permiten escrituras
+                firebaseInitialLoadDone = true;
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     if (data.participation !== undefined && data.teachers !== undefined) {
-                        lastRemoteDataHash = simpleDataHash(data);
-                        applyFirebaseData(data);
-                        showNotification('Datos sincronizados desde Firebase');
+                        // En un reintento, si hay cambios locales aún no sincronizados
+                        // (p. ej. editados sin conexión), no se sobrescriben: se
+                        // conservan y se suben con el siguiente guardado.
+                        if (retrySilently && lastSyncedDataHash !== '' &&
+                            simpleDataHash(getAppDataForFirebase()) !== lastSyncedDataHash) {
+                            console.log('Carga inicial: se conservan los cambios locales no sincronizados');
+                            lastRemoteDataHash = simpleDataHash(data);
+                            debouncedSaveToFirebase();
+                        } else {
+                            lastRemoteDataHash = simpleDataHash(data);
+                            applyFirebaseData(data);
+                            showNotification('Datos sincronizados desde Firebase');
+                        }
                     }
                 } else {
                     showNotification('No hay datos en Firebase. Se sincronizarán los datos locales.', 'info');
@@ -2001,9 +2098,11 @@
                 console.error('Error al cargar datos iniciales:', e);
                 updateFirebaseStatus(false);
                 updateSyncIndicator('sync-error');
-                showNotification('Error de conexión con Firebase: ' + e.message, 'error');
+                if (!retrySilently) showNotification('Error de conexión con Firebase: ' + e.message, 'error');
+                // Reintentar en segundo plano hasta completar la primera lectura
+                setTimeout(function() { loadInitialData(true); }, 30000);
             } finally {
-                unblockInterface();
+                if (!retrySilently) unblockInterface();
             }
         }
 
@@ -2088,7 +2187,9 @@
             if (autoSaveInterval) clearInterval(autoSaveInterval);
             if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
             console.log('Sincronización en tiempo real activada (Firebase onValue)');
-            // Safety net: cada 10 minutos, forzar un save si hay cambios pendientes
+            // Safety net: cada 10 minutos, subir el estado SOLO si ha cambiado.
+            // (saveToFirebase omite la escritura si no hay cambios respecto a la
+            // última sincronización y hasta que la carga inicial haya terminado)
             autoSaveInterval = setInterval(function() {
                 if (isAdminUser() && !syncDebounceTimer) {
                     saveToFirebase();
@@ -2164,7 +2265,11 @@
                 const data = snapshot.val();
                 if (data.participation !== undefined && data.teachers !== undefined) {
                     lastRemoteDataHash = simpleDataHash(data);
-                    applyFirebaseData(data);
+                    // Restauración explícita de una copia: reemplaza los mapas por
+                    // curso (sin la fusión de protección) y no se marca como
+                    // sincronizada, para que el estado restaurado se suba al servidor.
+                    applyFirebaseData(data, { mergeCourses: false, markSynced: false });
+                    debouncedSaveToFirebase();
                     showNotification('Copia restaurada correctamente');
                 } else throw new Error('Formato incorrecto.');
             } catch (e) {
@@ -4563,6 +4668,10 @@
 
             // Cargar datos guardados
             loadSavedData();
+            // Semilla del hash de sincronización con el estado local actual:
+            // permite detectar cambios locales hechos antes de la primera
+            // sincronización con Firebase (p. ej. si la carga inicial falla)
+            lastSyncedDataHash = simpleDataHash(getAppDataForFirebase());
             
             // Inicializar componentes de UI
             initNavigation();
