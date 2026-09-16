@@ -577,7 +577,7 @@
                 <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Iniciar Sesion</button>
                 <div class="login-error" id="login-error"></div>
                 <div class="login-toggle">
-                    El acceso a la aplicacion es personal. Las cuentas solo pueden ser creadas por el administrador.
+                    <i class="fas fa-info-circle"></i> El profesorado se loguea con <span style="color: var(--primary); font-weight: 600;">usuario / usuario</span>
                 </div>
             </div>
         </div>
@@ -904,6 +904,9 @@
                 <div class="ayto-management-bar admin-only ayto-management-bar">
                     <button class="ayto-btn-action success" id="add-ayto-project-btn">
                         <i class="fas fa-plus"></i> Nuevo Proyecto
+                    </button>
+                    <button class="ayto-btn-action" id="import-ayto-prev-btn" title="Importar los proyectos del curso académico anterior al activo">
+                        <i class="fas fa-file-import"></i> Importar del curso anterior
                     </button>
                 </div>
                 <div class="ayto-buttons-container" id="ayto-buttons-container">
@@ -1242,6 +1245,7 @@
         const SYNC_DEBOUNCE_MS = 1500;     // Espera antes de enviar cambios a Firebase
         let firebaseInitialLoadDone = false; // true tras la primera lectura exitosa de Firebase (antes no se escribe)
         let lastSyncedDataHash = '';        // hash del último estado sincronizado (evita escrituras y snapshots innecesarios)
+        let aytoDefaultsSeededCourse = null; // curso con la plantilla ayto sembrada en loadSavedData (pendiente de confirmar con Firebase)
 
         // Catálogo de programas por defecto (plantilla inicial oficial)
         const defaultProgramsData = {
@@ -1950,6 +1954,15 @@
             const prevParticipation = appState.participation || {};
             const prevTeachers = appState.teachers || {};
             const prevAytoProjects = appState.aytoProjects || {};
+            // La plantilla de proyectos ayto sembrada en loadSavedData (navegador sin
+            // datos locales) se descarta si el servidor trae proyectos pero NO trae
+            // ese curso: puede haberse vaciado a propósito en otro dispositivo.
+            // Solo es plantilla hasta que Firebase confirma.
+            if (aytoDefaultsSeededCourse && data && data.aytoProjects && typeof data.aytoProjects === 'object'
+                && !(aytoDefaultsSeededCourse in data.aytoProjects)) {
+                delete prevAytoProjects[aytoDefaultsSeededCourse];
+            }
+            aytoDefaultsSeededCourse = null;
             // IMPORTANTE: leer selectedCourse ANTES de normalizar
             appState.selectedCourse = data.selectedCourse || getCurrentCourse();
             // Forzar curso actual para usuario (solo puede ver el curso vigente)
@@ -2376,11 +2389,13 @@
         }
 
         function loadSavedData() {
+            let hadSavedAytoData = false;
             const savedData = localStorage.getItem('programsAppData');
             if (savedData) {
                 try {
                     const parsed = JSON.parse(savedData);
                     const selCourse = parsed.selectedCourse || getCurrentCourse();
+                    hadSavedAytoData = parsed.aytoProjects !== undefined && parsed.aytoProjects !== null;
                     appState = {
                         participation: normalizeParticipation(parsed.participation, selCourse),
                         selectedCourse: selCourse,
@@ -2400,10 +2415,14 @@
             appState.archivedPrograms = normalizeArchivedPrograms(appState.archivedPrograms);
             // Asegurar datos para el curso activo
             ensureActiveCourseData();
-            // Si no hay proyectos ayto, inicializar con los defaults para el curso seleccionado
+            // Proyectos del Ayuntamiento: SOLO se inicializa con la plantilla cuando
+            // nunca se han guardado proyectos (primera ejecución o datos anteriores
+            // a esta sección). Un curso vacío NO se rellena: puede haberse vaciado
+            // a propósito.
             const activeCourse = appState.selectedCourse || getCurrentCourse();
-            if (!appState.aytoProjects[activeCourse] || appState.aytoProjects[activeCourse].length === 0) {
+            if (!hadSavedAytoData) {
                 appState.aytoProjects[activeCourse] = JSON.parse(JSON.stringify(defaultAytoProjects));
+                aytoDefaultsSeededCourse = activeCourse; // plantilla pendiente de confirmar con Firebase
                 saveData();
             }
             // Si no hay lista de cursos, inicializar con los defaults
@@ -3213,6 +3232,7 @@
             document.getElementById('add-ayto-project-btn').addEventListener('click', function() {
                 openAytoProjectModal(-1);
             });
+            document.getElementById('import-ayto-prev-btn').addEventListener('click', importAytoFromPreviousCourse);
             document.getElementById('save-ayto-project-btn').addEventListener('click', saveAytoProject);
             document.getElementById('add-activity-btn').addEventListener('click', function() {
                 addActivityRow('');
@@ -3859,6 +3879,60 @@
             renderAytoProjects();
             showNotification(`Proyecto "${projectToTransfer.nombre}" transferido al curso ${targetCourse.replace('-', '/')}.`);
         }
+        // Importar al curso activo los proyectos del Ayuntamiento del curso
+        // académico inmediatamente anterior (solo administrador). Si el curso
+        // activo ya tiene proyectos, se pregunta si REEMPLAZARLOS o AÑADIRLOS
+        // (omitiendo los que ya existan con el mismo nombre).
+        function importAytoFromPreviousCourse() {
+            if (!isAdminUser()) return;
+            const activeCourse = appState.selectedCourse || getCurrentCourse();
+            const idx = appState.coursesList.indexOf(activeCourse);
+            if (idx <= 0) {
+                showNotification('No hay un curso anterior en la lista de cursos desde el que importar.', 'error');
+                return;
+            }
+            const prevCourse = appState.coursesList[idx - 1];
+            const prevProjects = (appState.aytoProjects[prevCourse] || []).filter(p => p && p.nombre);
+            if (prevProjects.length === 0) {
+                showNotification('El curso ' + prevCourse.replace('-', '/') + ' no tiene proyectos de Ayuntamiento que importar.', 'error');
+                return;
+            }
+
+            const current = appState.aytoProjects[activeCourse] || [];
+            let finalProjects;
+            let combinado = false;
+            if (current.length > 0) {
+                const reemplazar = confirm(
+                    'El curso ' + activeCourse.replace('-', '/') + ' ya tiene ' + current.length + ' proyecto(s) de Ayuntamiento.\n\n' +
+                    'Pulse ACEPTAR para REEMPLAZARLOS por los ' + prevProjects.length + ' del curso ' + prevCourse.replace('-', '/') + '.\n' +
+                    'Pulse CANCELAR para AÑADIRLOS a los actuales (se omiten los que ya existan con el mismo nombre).'
+                );
+                if (!reemplazar) {
+                    const existingNames = current.map(p => p.nombre);
+                    const nuevos = prevProjects
+                        .filter(p => !existingNames.includes(p.nombre))
+                        .map(p => JSON.parse(JSON.stringify(p)));
+                    finalProjects = current.concat(nuevos);
+                    combinado = true;
+                } else {
+                    finalProjects = prevProjects.map(p => JSON.parse(JSON.stringify(p)));
+                }
+            } else {
+                finalProjects = prevProjects.map(p => JSON.parse(JSON.stringify(p)));
+            }
+
+            appState.aytoProjects[activeCourse] = finalProjects;
+            saveData();
+            renderAytoProjects();
+
+            let msg;
+            if (combinado) {
+                msg = 'Añadidos ' + (finalProjects.length - current.length) + ' proyecto(s) del curso ' + prevCourse.replace('-', '/') + '. Lista resultante: ' + finalProjects.length + ' proyecto(s).';
+            } else {
+                msg = 'Importados ' + finalProjects.length + ' proyecto(s) del curso ' + prevCourse.replace('-', '/') + ' en ' + activeCourse.replace('-', '/') + '.';
+            }
+            showNotification(msg);
+        }
 
         function normalizeName(name) {
             const replacements = {
@@ -4409,6 +4483,7 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     const selCourse = importedData.selectedCourse || getCurrentCourse();
+                    const prevAytoByCourse = appState.aytoProjects || {};
                     appState = {
                         participation: normalizeParticipation(importedData.participation, selCourse),
                         selectedCourse: selCourse,
@@ -4432,10 +4507,15 @@
                             appState.dossierUrls[LOCKED_DOSSIER_COURSE] = LOCKED_DOSSIER_URL;
                         }
                     }
-                    // Si no hay proyectos ayto importados, mantener los actuales
+                    // Si el JSON importado no trae proyectos de Ayuntamiento para el
+                    // curso activo, se conservan los actuales (nunca se regenera la
+                    // plantilla: un curso vacío puede estarlo a propósito)
                     const importedCourse = appState.selectedCourse;
                     if (!appState.aytoProjects[importedCourse] || appState.aytoProjects[importedCourse].length === 0) {
-                        appState.aytoProjects[importedCourse] = JSON.parse(JSON.stringify(defaultAytoProjects));
+                        const prevProjects = prevAytoByCourse[importedCourse];
+                        if (prevProjects && prevProjects.length > 0) {
+                            appState.aytoProjects[importedCourse] = JSON.parse(JSON.stringify(prevProjects));
+                        }
                     }
                     // Si no hay lista de cursos importada, mantener la actual
                     if (appState.coursesList.length === 0) {
