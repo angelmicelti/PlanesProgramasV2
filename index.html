@@ -310,8 +310,6 @@
             display: flex; align-items: center; gap: 6px;
         }
         .ayto-btn-action:hover { background: #7b1fa2; transform: translateY(-1px); }
-        .ayto-btn-action.danger { background: var(--danger); }
-        .ayto-btn-action.danger:hover { background: #c82333; }
         .ayto-btn-action.success { background: var(--secondary); }
         .ayto-btn-action.success:hover { background: #007a3e; }
         .ayto-project-btn-wrapper {
@@ -470,12 +468,8 @@
         .login-card .form-control { font-size: 1rem; padding: 12px 14px; border-radius: 8px; border: 2px solid #e0e0e0; transition: border-color 0.2s; }
         .login-card .form-control:focus { border-color: var(--primary); outline: none; }
         .login-card .btn-primary { width: 100%; padding: 13px; font-size: 1rem; border-radius: 8px; }
-        .login-card .btn-secondary { width: 100%; padding: 13px; font-size: 1rem; border-radius: 8px; margin-top: 10px; background: #e9ecef; color: var(--dark); }
-        .login-card .btn-secondary:hover { background: #dee2e6; }
         .login-error { color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 10px; min-height: 20px; }
         .login-toggle { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--gray); }
-        .login-toggle a { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; }
-        .login-toggle a:hover { text-decoration: underline; }
 
         /* Indicador de usuario logueado */
         #user-bar {
@@ -519,36 +513,13 @@
         .users-table .action-btn-sm { padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
 
         /* ----- PERMISOS ADMIN-ONLY ----- */
+        /* Se ocultan contenedores completos (collapsibles y barras de gestión);
+           los botones interiores se muestran u ocultan junto a su contenedor. */
         .admin-only { display: none !important; }
         body.is-admin .admin-only { display: initial !important; }
         body.is-admin .admin-only.flex-row { display: flex !important; }
-        body.is-admin .admin-only.grid-row { display: grid !important; }
-        /* Para botones que tienen display:flex o display:inline-block */
-        body.is-admin .admin-only.btn,
-        body.is-admin .admin-only.ayto-btn-action,
-        body.is-admin .admin-only.action-btn,
-        body.is-admin .admin-only.coordinator-btn,
-        body.is-admin .admin-only.nav-btn,
-        body.is-admin .admin-only.add-activity-btn,
-        body.is-admin .admin-only.btn-primary,
-        body.is-admin .admin-only.btn-secondary { display: inline-flex !important; }
-        body.is-admin .admin-only.action-btn { display: inline-flex !important; }
-        body.is-admin .admin-only.btn { display: inline-flex !important; }
-        body.is-admin .admin-only.ayto-btn-action { display: inline-flex !important; }
-        body.is-admin .admin-only.coordinator-btn { display: inline-block !important; }
-        body.is-admin .admin-only.nav-btn { display: inline-flex !important; }
-        body.is-admin .admin-only.add-activity-btn { display: block !important; }
-        /* Para elementos con display:block */
         body.is-admin .admin-only.block { display: block !important; }
-        body.is-admin .admin-only.form-group { display: block !important; }
-        /* Para elementos con display:flex */
-        body.is-admin .admin-only.d-flex { display: flex !important; }
-        /* Para los course-item .btn-group y ayto-project-btn-wrapper .btn-group */
-        body.is-admin .admin-only.btn-group { display: flex !important; }
-        /* Para la barra de gestión de ayto */
         body.is-admin .admin-only.ayto-management-bar { display: flex !important; }
-        /* Para elementos inline-block */
-        body.is-admin .admin-only.inline { display: inline-block !important; }
         /* Badge indicador modo lectura */
         .readonly-badge {
             background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
@@ -624,7 +595,7 @@
                     <button id="admin-users-btn" title="Gestionar usuarios"><i class="fas fa-users-cog"></i></button>
                     <button id="logout-btn" title="Cerrar sesion"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
-                <nav id="main-nav">
+                <nav>
                     <button class="nav-btn active" data-page="home">
                         <i class="fas fa-home"></i> Inicio
                     </button>
@@ -668,7 +639,7 @@
                 <div class="collapsible-content">
                     <div class="form-group">
                         <label>Curso académico:</label>
-                        <div class="courses-manager" id="courses-manager">
+                        <div class="courses-manager">
                             <div class="courses-list" id="courses-list">
                                 <!-- Se genera dinámicamente -->
                             </div>
@@ -681,7 +652,7 @@
                     </div>
 
                     
-                    <div class="form-group" id="dossier-url-group">
+                    <div class="form-group">
                         <label for="dossier-url-input"><i class="fas fa-link"></i> URL del Dossier para el curso <span id="dossier-url-course-label" style="color: var(--primary);"></span>:</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <input type="url" id="dossier-url-input" class="form-control" placeholder="https://ejemplo.com/dossier_2025-2026.pdf" style="flex: 1;">
@@ -901,7 +872,7 @@
                 </div>
             </div>
             <div class="container">
-                <div class="ayto-management-bar admin-only ayto-management-bar">
+                <div class="ayto-management-bar admin-only">
                     <button class="ayto-btn-action success" id="add-ayto-project-btn">
                         <i class="fas fa-plus"></i> Nuevo Proyecto
                     </button>
@@ -1015,7 +986,7 @@
             </div>
             <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
                 <!-- Formulario para anadir usuario -->
-                <div id="admin-add-user-form" style="background: #f0f7ff; border: 2px solid var(--primary); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                <div style="background: #f0f7ff; border: 2px solid var(--primary); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
                     <h4 style="color: var(--primary); margin-bottom: 12px; font-size: 0.95rem;"><i class="fas fa-user-plus"></i> Crear nuevo usuario</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="form-group" style="margin-bottom: 0;">
@@ -1333,10 +1304,16 @@
         }
 
         async function deleteUserAccount(username) {
-            if (!currentUser || currentUser.rol !== 'admin') return { ok: false, msg: 'Solo el administrador puede eliminar usuarios.' };
+            if (!isAdminUser()) return { ok: false, msg: 'Solo el administrador puede eliminar usuarios.' };
             if (username === currentUser.username) return { ok: false, msg: 'No puedes eliminar tu propia cuenta.' };
             if (username.toLowerCase() === 'usuario') return { ok: false, msg: 'No se puede eliminar el usuario por defecto.' };
-            await db.ref(`${USERS_PATH}/${username}`).remove();
+            try {
+                await db.ref(`${USERS_PATH}/${username}`).remove();
+            } catch (e) {
+                console.error('Error al eliminar el usuario:', e);
+                showNotification('Error al eliminar el usuario: ' + e.message, 'error');
+                return { ok: false, msg: 'Error de conexión con Firebase.' };
+            }
             return { ok: true, msg: 'Usuario eliminado.' };
         }
 
@@ -1346,14 +1323,19 @@
         }
 
         async function toggleUserRole(username, newRol) {
-            if (!currentUser || currentUser.rol !== 'admin') return;
+            if (!isAdminUser()) return;
             if (username === currentUser.username) return; // Can't change own role
             // Impedir que el usuario por defecto "usuario" sea promovido a admin
             if (username.toLowerCase() === 'usuario') {
                 showNotification('No se puede cambiar el rol del usuario por defecto.', 'error');
                 return;
             }
-            await db.ref(`${USERS_PATH}/${username}/rol`).set(newRol);
+            try {
+                await db.ref(`${USERS_PATH}/${username}/rol`).set(newRol);
+            } catch (e) {
+                console.error('Error al cambiar el rol:', e);
+                showNotification('Error al cambiar el rol: ' + e.message, 'error');
+            }
         }
 
         function setUserLoggedIn(username, rol) {
@@ -1460,7 +1442,13 @@
                 const password = document.getElementById('login-password').value;
                 const errorEl = document.getElementById('login-error');
                 errorEl.textContent = '';
-                const result = await loginUser(username, password);
+                let result;
+                try {
+                    result = await loginUser(username, password);
+                } catch (e) {
+                    console.error('Error al iniciar sesión:', e);
+                    result = { ok: false, msg: 'Error de conexión con Firebase. Compruebe su conexión e inténtelo de nuevo.' };
+                }
                 if (result.ok) {
                     setUserLoggedIn(username.trim().toLowerCase(), result.rol);
                     await initAppAfterLogin();
@@ -1498,7 +1486,7 @@
                 const rol = document.getElementById('admin-new-role').value;
                 const errorEl = document.getElementById('admin-add-user-error');
 
-                if (!currentUser || currentUser.rol !== 'admin') {
+                if (!isAdminUser()) {
                     errorEl.textContent = 'No tienes permisos para crear usuarios.';
                     return;
                 }
@@ -1508,7 +1496,13 @@
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
 
-                const result = await registerUserByAdmin(username, password, password2, rol);
+                let result;
+                try {
+                    result = await registerUserByAdmin(username, password, password2, rol);
+                } catch (e) {
+                    console.error('Error al crear el usuario:', e);
+                    result = { ok: false, msg: 'Error de conexión con Firebase. Compruebe su conexión e inténtelo de nuevo.' };
+                }
 
                 if (result.ok) {
                     document.getElementById('admin-new-username').value = '';
@@ -1537,7 +1531,7 @@
         }
 
         async function loadUsersAdminModal() {
-            if (!currentUser || currentUser.rol !== 'admin') return;
+            if (!isAdminUser()) return;
             const modal = document.getElementById('modal-users-admin');
             const tbody = document.getElementById('users-admin-tbody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando...</td></tr>';
@@ -1550,14 +1544,21 @@
             document.getElementById('admin-add-user-error').style.color = 'var(--danger)';
             modal.classList.add('active');
 
-            const snapshot = await db.ref(USERS_PATH).once('value');
-            const users = snapshot.val() || {};
+            let users = {};
+            try {
+                const snapshot = await db.ref(USERS_PATH).once('value');
+                users = snapshot.val() || {};
+            } catch (e) {
+                console.error('Error al cargar los usuarios:', e);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color: var(--danger);">Error al cargar los usuarios: ' + escapeHtml(e.message) + '</td></tr>';
+                return;
+            }
 
             tbody.innerHTML = '';
             Object.entries(users).forEach(([username, data]) => {
                 const isSelf = username === currentUser.username;
                 const tr = document.createElement('tr');
-                const dateStr = data.fechaRegistroLocal || new Date(data.fechaRegistro).toLocaleString('es-ES');
+                const dateStr = data.fechaRegistroLocal || (data.fechaRegistro ? new Date(data.fechaRegistro).toLocaleString('es-ES') : '--');
                 const safeUsername = escapeHtml(username);
                 const safeRol = escapeHtml(data.rol || 'usuario');
                 const safeDate = escapeHtml(dateStr);
@@ -1656,12 +1657,13 @@
             event.preventDefault();
         });
 
-        // Escapar HTML para prevenir inyección XSS
+        // Escapar HTML para prevenir inyección XSS (incluidas las comillas
+        // dobles, para que el resultado sea también seguro en atributos HTML)
         function escapeHtml(s) {
             if (!s) return '';
             const d = document.createElement('div');
             d.textContent = s;
-            return d.innerHTML;
+            return d.innerHTML.replace(/"/g, '&quot;');
         }
 
         function getCurrentCourse() {
@@ -2007,6 +2009,7 @@
             renderCourses();
             document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
             updateDossierButton();
+            applyPaletteByCourse(appState.selectedCourse);
             syncAytoCourse();
             if (preservedCourses.length > 0) {
                 console.warn('Cursos conservados localmente (no venían en los datos recibidos):', preservedCourses.join(', '));
@@ -2157,11 +2160,6 @@
             }
         }
 
-        // Antigua función de carga auto (ahora reemplazada por loadInitialData)
-        async function loadLatestFromFirebaseAuto() {
-            await loadInitialData();
-        }
-
         // --- Indicador visual de sincronización ---
         function updateSyncIndicator(status) {
             const indicator = document.getElementById('last-update-indicator');
@@ -2223,11 +2221,6 @@
             if (autoSaveTimeout) { clearTimeout(autoSaveTimeout); autoSaveTimeout = null; }
         }
 
-        // autoSaveFirebase ya no se usa directamente — saveToFirebase() es la función principal
-        async function autoSaveFirebase() {
-            await saveToFirebase();
-        }
-
         async function viewFirebaseBackups() {
             if (isLoadingFromCloud) { showNotification('Espera a que termine la operación actual', 'info'); return; }
             try {
@@ -2253,7 +2246,6 @@
                     const isAuto = backup.autoSaved ? ' (Auto)' : '';
                     const li = document.createElement('li');
                     li.className = 'backup-item';
-                    li.id = `backup-item-${backup.key}`;
                     li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer;';
                     li.innerHTML = `
                         <div style="flex:1; cursor: pointer;" onclick="loadSpecificBackup('${backup.key}')">
@@ -2515,10 +2507,14 @@
                 // Si se vacía, eliminar la URL personalizada para este curso
                 delete appState.dossierUrls[selected];
             } else {
-                // Validar que es una URL válida
+                // Validar que es una URL web válida (solo http/https)
+                let parsed;
                 try {
-                    new URL(url);
+                    parsed = new URL(url);
                 } catch (e) {
+                    parsed = null;
+                }
+                if (!parsed || !/^https?:$/.test(parsed.protocol)) {
                     showNotification('URL no válida. Debe empezar con http:// o https://', 'error');
                     return;
                 }
@@ -3060,16 +3056,22 @@
         // MANUAL DE USO (descarga según el perfil conectado)
         // ================================================
 
+        // Lanza la descarga de un archivo a partir de su URL (o blob) creando
+        // un enlace temporal. Patrón común de manuales, exportaciones e informes.
+        function triggerDownload(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         // Descarga el manual de uso correspondiente al perfil del usuario conectado.
         // Los manuales se alojan junto al archivo index.html.
         function downloadManual() {
             const file = (currentUser && currentUser.rol === 'admin') ? 'manual-administrador.pdf' : 'manual-usuario.pdf';
-            const link = document.createElement('a');
-            link.href = file;
-            link.download = file;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            triggerDownload(file, file);
             showNotification(`Descargando el manual de su perfil (${file}).`);
         }
 
@@ -3316,20 +3318,31 @@
             }
         }
 
-        function setActiveCourse(index) {
-            if (index < 0 || index >= appState.coursesList.length) return;
-            appState.selectedCourse = appState.coursesList[index];
+        // Actualiza el subtítulo del curso activo que se muestra en la cabecera
+        function updateCourseSubtitle() {
+            document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
+        }
+
+        // Refresca toda la interfaz tras un cambio de curso activo (selección,
+        // edición o eliminación del que estaba activo): datos del curso, tarjetas,
+        // proyectos del Ayuntamiento, profesorado, dossier, paleta y contadores.
+        function refreshAfterCourseChange() {
             ensureActiveCourseData();
-            saveData();
             renderCourses();
             renderAytoProjects();
             initPrograms();
             updateTeacherSelectors();
-            // Actualizar la UI del curso en header y dossier
-            document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
+            updateCourseSubtitle();
             updateDossierButton();
             applyPaletteByCourse(appState.selectedCourse);
             syncAytoCourse();
+        }
+
+        function setActiveCourse(index) {
+            if (index < 0 || index >= appState.coursesList.length) return;
+            appState.selectedCourse = appState.coursesList[index];
+            saveData();
+            refreshAfterCourseChange();
             showNotification(`Curso activo: ${appState.selectedCourse}`);
         }
 
@@ -3399,9 +3412,10 @@
         function startEditCourse(index) {
             if (index < 0 || index >= appState.coursesList.length) return;
             const container = document.getElementById('courses-list');
-            // Si ya hay una fila en edición, cancelarla
+            // Si ya hay una fila en edición, cancelarla y restaurar la fila
+            // que quedó oculta (renderCourses reconstruye la lista limpia)
             const existingEdit = container.querySelector('.course-inline-edit');
-            if (existingEdit) existingEdit.remove();
+            if (existingEdit) renderCourses();
 
             const currentCourse = appState.coursesList[index];
             const editRow = document.createElement('div');
@@ -3416,13 +3430,15 @@
             const input = editRow.querySelector('input');
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') saveEditCourse(editRow, input, index);
-                if (e.key === 'Escape') editRow.remove();
+                // Al cancelar se re-renderiza: la fila editada quedó oculta y
+                // debe reaparecer
+                if (e.key === 'Escape') renderCourses();
             });
             editRow.querySelector('.btn-sm.save').addEventListener('click', function() {
                 saveEditCourse(editRow, input, index);
             });
             editRow.querySelector('.btn-sm.cancel').addEventListener('click', function() {
-                editRow.remove();
+                renderCourses();
             });
 
             // Insertar después del item actual
@@ -3486,12 +3502,15 @@
             // Si el curso editado era el activo, actualizar selectedCourse
             if (appState.selectedCourse === oldCourse) {
                 appState.selectedCourse = value;
-                document.getElementById('course-subtitle').textContent = `Curso ${value}`;
-                updateDossierButton();
-                syncAytoCourse();
             }
             saveData();
-            renderCourses();
+            if (appState.selectedCourse === value) {
+                // El editado era el curso activo: refrescar toda la interfaz
+                // (la posición en la lista pudo cambiar y con ella la paleta)
+                refreshAfterCourseChange();
+            } else {
+                renderCourses();
+            }
             showNotification(`Curso actualizado a ${value}.`);
         }
 
@@ -3511,15 +3530,19 @@
             if (appState.teachers) delete appState.teachers[course];
             if (appState.aytoProjects) delete appState.aytoProjects[course];
             if (appState.dossierUrls) delete appState.dossierUrls[course];
-            // Si era el activo, seleccionar el primero
+            // Si era el activo, seleccionar el primero ANTES de guardar
+            // (evita persistir un selectedCourse que ya no existe en la lista)
             if (isActive) {
                 appState.selectedCourse = appState.coursesList[0];
-                document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
-                updateDossierButton();
-                syncAytoCourse();
             }
             saveData();
-            renderCourses();
+            if (isActive) {
+                // Refrescar toda la interfaz con el nuevo curso activo
+                // (tarjetas, ayto, profesorado, paleta y contadores)
+                refreshAfterCourseChange();
+            } else {
+                renderCourses();
+            }
             showNotification(`Curso ${course} eliminado.`);
         }
 
@@ -3845,11 +3868,6 @@
             showNotification('Proyecto eliminado.');
         }
 
-        // Alias para compatibilidad con la inicialización
-        function initAytoTab() {
-            renderAytoProjects();
-        }
-
         // Transferir un proyecto del curso activo a otro curso posterior
         function transferAytoProject(projectIndex, targetCourse) {
             const activeCourse = appState.selectedCourse || getCurrentCourse();
@@ -3943,7 +3961,10 @@
                 'â‚¬': '€', 'â€': '"', 'â€œ': '"', 'â€�': '"', 'â€¦': '…'
             };
             let normalized = name;
-            Object.keys(replacements).forEach(badChar => {
+            // Aplicar las sustituciones de más larga a más corta: evita que una
+            // clave prefijo de otra (p. ej. 'â€' dentro de 'â€œ') se aplique antes
+            // de tiempo y corrompa el resultado.
+            Object.keys(replacements).sort((a, b) => b.length - a.length).forEach(badChar => {
                 const goodChar = replacements[badChar];
                 normalized = normalized.replace(new RegExp(badChar, 'g'), goodChar);
             });
@@ -4245,7 +4266,6 @@
             const nombre = trimmed.substring(commaIndex + 1).trim();
             if (!apellidos) return { valid: false, msg: 'Los apellidos no pueden estar vacíos.' };
             if (!nombre) return { valid: false, msg: 'El nombre no puede estar vacío (después de la coma).' };
-            if (apellidos.split(/\s+/).length < 1) return { valid: false, msg: 'Debe incluir al menos un apellido.' };
             return { valid: true, name: `${apellidos}, ${nombre}` };
         }
 
@@ -4317,12 +4337,8 @@
             }
 
             appState.teachers[activeCourse].push(validation.name);
-            // Ordenar alfabéticamente
-            appState.teachers[activeCourse].sort((a, b) => {
-                const [apA, nomA] = a.split(',').map(s => s.trim().toLowerCase());
-                const [apB, nomB] = b.split(',').map(s => s.trim().toLowerCase());
-                return apA.localeCompare(apB) || nomA.localeCompare(nomB);
-            });
+            // Ordenar alfabéticamente (mismo criterio que la importación de Séneca)
+            sortTeachersByName(appState.teachers[activeCourse]);
 
             saveData();
             updateTeacherSelectors();
@@ -4412,12 +4428,8 @@
                 }
             }
 
-            // Reordenar
-            teachers.sort((a, b) => {
-                const [apA, nomA] = a.split(',').map(s => s.trim().toLowerCase());
-                const [apB, nomB] = b.split(',').map(s => s.trim().toLowerCase());
-                return apA.localeCompare(apB) || nomA.localeCompare(nomB);
-            });
+            // Reordenar (mismo criterio que la importación de Séneca)
+            sortTeachersByName(teachers);
 
             saveData();
             updateTeacherSelectors();
@@ -4466,12 +4478,7 @@
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'programas-educativos-datos.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            triggerDownload(url, 'programas-educativos-datos.json');
             URL.revokeObjectURL(url);
         }
 
@@ -4521,12 +4528,19 @@
                     if (appState.coursesList.length === 0) {
                         appState.coursesList = [...defaultCoursesList];
                     }
+                    // Asegurar que el curso activo existe en la lista importada
+                    // (un JSON externo podía traer un selectedCourse inexistente)
+                    if (!appState.coursesList.includes(appState.selectedCourse)) {
+                        appState.selectedCourse = appState.coursesList[0] || getCurrentCourse();
+                        ensureActiveCourseData();
+                    }
                     saveData();
                     initPrograms();
                     renderAytoProjects();
                     renderCourses();
                     document.getElementById('course-subtitle').textContent = `Curso ${appState.selectedCourse}`;
                     updateDossierButton();
+                    applyPaletteByCourse(appState.selectedCourse);
                     syncAytoCourse();
                     if (getActiveTeachers().length > 0) updateTeacherSelectors();
                     alert('Datos importados correctamente.');
@@ -4673,8 +4687,8 @@
                 </thead>
                 <tbody>`;
                     reportData[type].forEach(item => {
-                        const safeProgram = item.program.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-                        const safeCoordinator = item.coordinator.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                        const safeProgram = escapeHtml(item.program);
+                        const safeCoordinator = escapeHtml(item.coordinator);
                         htmlContent += `
                     <tr>
                         <td>
@@ -4704,12 +4718,7 @@
 </html>`;
             const blob = new Blob([htmlContent], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${getReportFileLabel(filterTypes)}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            triggerDownload(url, `${getReportFileLabel(filterTypes)}.html`);
             URL.revokeObjectURL(url);
         }
 
@@ -4820,6 +4829,10 @@
 
             // Cargar datos guardados
             loadSavedData();
+            // La marca de "datos recién borrados" solo debe silenciar el guardado
+            // inicial (evita re-subir la plantilla tras Limpiar Todos los Datos);
+            // a partir de aquí, los cambios del usuario deben persistir con normalidad.
+            sessionStorage.removeItem('dataJustCleared');
             // Semilla del hash de sincronización con el estado local actual:
             // permite detectar cambios locales hechos antes de la primera
             // sincronización con Firebase (p. ej. si la carga inicial falla)
@@ -4830,7 +4843,7 @@
             initPrograms();
             initEvents();
             initCollapsibles();
-            initAytoTab();
+            renderAytoProjects();
             initAuthEvents();
             // Aplicar paleta según curso activo
             applyPaletteByCourse(appState.selectedCourse);
